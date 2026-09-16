@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/src/services/hardware_keyboard.dart';
-import 'package:klondike/src/game/objects/land.dart';
-import 'package:klondike/src/game/objects/wall.dart';
-import 'package:klondike/src/test_game.dart';
+import 'package:testgame/src/game/objects/land.dart';
+import 'package:testgame/src/game/objects/wall.dart';
+import 'package:testgame/src/test_game.dart';
 
 class Player extends SpriteAnimationComponent
     with KeyboardHandler, CollisionCallbacks, HasGameReference<TestGame> {

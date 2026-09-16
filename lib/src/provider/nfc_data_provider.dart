@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:klondike/src/provider/nfc_data_notifier.dart';
-
+import 'package:testgame/src/provider/nfc_data_notifier.dart';
 
 class NfcDataProvider extends InheritedWidget {
   const NfcDataProvider({
@@ -11,8 +10,8 @@ class NfcDataProvider extends InheritedWidget {
 
   final NfcDataNotifier nfcDataNotifier;
   static NfcDataNotifier of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<NfcDataProvider>();
+    final provider =
+        context.dependOnInheritedWidgetOfExactType<NfcDataProvider>();
     if (provider == null) {
       throw Exception('No NfcProvider found in context');
     }

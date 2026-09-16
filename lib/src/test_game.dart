@@ -6,10 +6,10 @@ import 'package:flame/input.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/widgets.dart';
-import 'package:klondike/src/game/actors/player.dart';
-import 'package:klondike/src/game/objects/land.dart';
-import 'package:klondike/src/game/objects/wall.dart';
-import 'package:klondike/src/provider/nfc_data_notifier.dart';
+import 'package:testgame/src/game/actors/player.dart';
+import 'package:testgame/src/game/objects/land.dart';
+import 'package:testgame/src/game/objects/wall.dart';
+import 'package:testgame/src/provider/nfc_data_notifier.dart';
 
 class TestGame extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {

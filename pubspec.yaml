@@ -1,5 +1,5 @@
-name: klondike
-description: Klondike Flame Game
+name: testgame
+description: TestGame Using Flame
 version: 0.0.0
 publish_to: none
 
