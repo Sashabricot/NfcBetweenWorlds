@@ -11,6 +11,8 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 class NfcDataNotifier extends ChangeNotifier {
   final Map<String, NfcData> _nfcTags = {};
   bool _found = false;
+  String _nfcType = '';
+
   NfcData _latestNfcData = NfcData(
     ndefMessage: NdefMessage(records: []),
     uid: '',
@@ -18,6 +20,7 @@ class NfcDataNotifier extends ChangeNotifier {
   Map<String, NfcData> get nfcTags => _nfcTags;
   NfcData get latestNfcData => _latestNfcData;
   bool get found => _found;
+  String get nfcType => _nfcType;
 
   Future<void> startNfcRead() async {
     NfcAvailability availability =
@@ -28,6 +31,7 @@ class NfcDataNotifier extends ChangeNotifier {
       throw Exception('NFC not available');
     } else {
       do {
+        print('starting session');
         Completer nfcDataProcessing = Completer();
         await NfcManager.instance.startSession(
           pollingOptions: {NfcPollingOption.iso14443},
@@ -44,8 +48,9 @@ class NfcDataNotifier extends ChangeNotifier {
     required NfcTag nfc,
   }) async {
     try {
-      final Ndef? ndef = Ndef.from(nfc);
-      final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
+      NfcData newNfc;
+      final Ndef? ndef = await Ndef.from(nfc);
+      final NfcTagAndroid? nfcTag = await NfcTagAndroid.from(nfc);
 
       final String nfcUid;
 
@@ -55,22 +60,46 @@ class NfcDataNotifier extends ChangeNotifier {
       } else {
         nfcUid = '';
       }
-      NfcData newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
-      print('${newNfc.characterName}');
-      print('${newNfc.uid}');
-      if (newNfc.characterName == 'Link') {
-        _found = true;
-        notifyListeners();
-      } else
-        _found = false;
-      _nfcTags[nfcUid] = newNfc;
 
-      await NfcManager.instance.stopSession();
-      nfcDataProcessing.complete();
+      if (_nfcTags[nfcUid] == null) {
+        NfcData newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
+        print('${newNfc.characterName}');
+        print('${newNfc.uid}');
+        _nfcTags[nfcUid] = newNfc;
+      } else {
+        print('not new');
+        newNfc = _nfcTags[nfcUid]!;
+        if (_latestNfcData.uid != newNfc.uid) {
+          print('not latest update');
+          if (newNfc.slimeType != null) {
+            print('checking slimeType ${newNfc.slimeType}');
+            switch (newNfc.slimeType) {
+              case [50]:
+                print('Land');
+                _nfcType = 'Land';
+                notifyListeners();
+              case [49]:
+                print('Water');
+                _nfcType = 'Water';
+                notifyListeners();
+              case [48]:
+                print('Lava');
+                _nfcType = 'Lava';
+                notifyListeners();
+              default:
+            }
+          }
+        }
+        _latestNfcData = newNfc;
+      }
     } catch (e) {
-      await NfcManager.instance.stopSession();
-      nfcDataProcessing.complete();
+      print('$e');
     }
+    print('scan completed');
+
+    print('stopping session');
+    await NfcManager.instance.stopSession();
+    nfcDataProcessing.complete();
   }
 
   String _parseNfcUid(Uint8List? nfcId) {

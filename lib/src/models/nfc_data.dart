@@ -1,14 +1,15 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:nfc_manager/ndef_record.dart';
 
 class NfcData {
-  NfcData({
-    required this.ndefMessage,
-    required this.uid,
-    this.characterName,
-    this.characterItems,
-  }) {
+  NfcData(
+      {required this.ndefMessage,
+      required this.uid,
+      this.characterName,
+      this.characterItems,
+      this.slimeType}) {
     print('calling constr');
     characterName = '';
     characterItems = [];
@@ -26,6 +27,8 @@ class NfcData {
             case 'g:i':
               characterItems!.add(record);
               print('item : ${utf8.decode(record.payload)}');
+            case 's:t':
+              slimeType = record.payload;
           }
 
           print(
@@ -35,7 +38,7 @@ class NfcData {
       }
     }
   }
-
+  Uint8List? slimeType;
   final NdefMessage? ndefMessage;
   final String uid;
   String? characterName;

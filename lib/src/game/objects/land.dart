@@ -4,9 +4,9 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:klondike/src/test_game.dart';
 
-class Land extends PositionComponent
+class Ground extends PositionComponent
     with CollisionCallbacks, HasGameReference<TestGame> {
-  Land() : super();
+  Ground() : super();
 
   @override
   FutureOr<void> onLoad() {

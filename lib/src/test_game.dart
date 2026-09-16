@@ -7,14 +7,20 @@ import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/widgets.dart';
 import 'package:klondike/src/game/actors/player.dart';
+import 'package:klondike/src/game/objects/land.dart';
 import 'package:klondike/src/game/objects/wall.dart';
 import 'package:klondike/src/provider/nfc_data_notifier.dart';
 
 class TestGame extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
   TestGame();
+  String walkingType = '';
   late Player _player;
   var wallsList = [];
+  var blockedZone = [];
+  var waterObjects;
+  var landObjects;
+  var lavaObjects;
   @override
   Color backgroundColor() {
     return const Color.fromARGB(255, 173, 223, 247);
@@ -58,6 +64,9 @@ class TestGame extends FlameGame
         component.tileMap.getLayer<ObjectGroup>('SpawnPoint')!.objects.first;
 
     final wallObjects = component.tileMap.getLayer<ObjectGroup>('Wall');
+    waterObjects = component.tileMap.getLayer<ObjectGroup>('WaterZone');
+    landObjects = component.tileMap.getLayer<ObjectGroup>('LandZone');
+    lavaObjects = component.tileMap.getLayer<ObjectGroup>('LavaZone');
 
     _player = Player(
         position: Vector2(spawnPoint.x, spawnPoint.y), joystick: joystick)
@@ -73,6 +82,7 @@ class TestGame extends FlameGame
         ..debugColor = Color.fromARGB(1, 231, 2, 193));
       world.add(wallsList.last);
     }
+    addBlockedZone(waterObjects);
     world.add(_player);
 
     camera.follow(_player, snap: true);
@@ -81,11 +91,35 @@ class TestGame extends FlameGame
   }
 
   void _removeWalls() {
-    if (nfcDataNotifier.found) {
-      for (var element in wallsList) {
-        world.remove(element);
+    for (var element in blockedZone) {
+      world.remove(element);
+    }
+    blockedZone = [];
+    walkingType = nfcDataNotifier.nfcType;
+
+    if (walkingType == 'Land') {
+      addBlockedZone(waterObjects);
+      addBlockedZone(lavaObjects);
+    } else if (walkingType == 'Water') {
+      addBlockedZone(landObjects);
+      addBlockedZone(lavaObjects);
+    } else if (walkingType == 'Lava') {
+      addBlockedZone(waterObjects);
+      addBlockedZone(landObjects);
+    }
+  }
+
+  void addBlockedZone(ObjectGroup? zoneObjects) {
+    if (zoneObjects != null) {
+      for (var zone in zoneObjects.objects) {
+        blockedZone.add(Ground()
+          ..position = Vector2(zone.x, zone.y)
+          ..width = zone.width
+          ..height = zone.height
+          ..debugMode = true
+          ..debugColor = Color.fromARGB(1, 88, 148, 9));
+        world.add(blockedZone.last);
       }
-      wallsList = [];
     }
   }
 
