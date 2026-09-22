@@ -21,6 +21,8 @@ class TestGame extends FlameGame
   var waterObjects;
   var landObjects;
   var lavaObjects;
+  late JoystickComponent _joystick;
+
   @override
   Color backgroundColor() {
     return const Color.fromARGB(255, 173, 223, 247);
@@ -30,10 +32,12 @@ class TestGame extends FlameGame
 
   @override
   FutureOr<void> onLoad() async {
-    nfcDataNotifier.addListener(_removeWalls);
+    nfcDataNotifier.addListener(_updateWorldType);
     nfcDataNotifier.startNfcRead();
     await images.loadAll([
-      'Slime1_Walk_body.png',
+      'Slime1_Idle_body.png',
+      'Slime2_Idle_body.png',
+      'Slime3_Idle_body.png',
       'ember.png',
       'joystick.png',
     ]);
@@ -44,7 +48,7 @@ class TestGame extends FlameGame
       rows: 1,
     );
 
-    final joystick = JoystickComponent(
+    _joystick = JoystickComponent(
       knob: SpriteComponent(
         sprite: sheet.getSpriteById(1),
         size: Vector2.all(100),
@@ -69,7 +73,9 @@ class TestGame extends FlameGame
     lavaObjects = component.tileMap.getLayer<ObjectGroup>('LavaZone');
 
     _player = Player(
-        position: Vector2(spawnPoint.x, spawnPoint.y), joystick: joystick)
+        position: Vector2(spawnPoint.x, spawnPoint.y),
+        joystick: _joystick,
+        slimeImage: 'Slime1_Idle_body.png')
       ..debugMode = true;
     world.add(component);
 
@@ -86,27 +92,40 @@ class TestGame extends FlameGame
     world.add(_player);
 
     camera.follow(_player, snap: true);
-    camera.viewport.add(joystick);
+    camera.viewport.add(_joystick);
     return super.onLoad();
   }
 
-  void _removeWalls() {
+  void _updateWorldType() {
     for (var element in blockedZone) {
       world.remove(element);
     }
     blockedZone = [];
     walkingType = nfcDataNotifier.nfcType;
+    final position = _player.position;
+    String slimeImage = '';
+    world.remove(_player);
 
     if (walkingType == 'Land') {
       addBlockedZone(waterObjects);
       addBlockedZone(lavaObjects);
+      slimeImage = 'Slime1_Idle_body.png';
     } else if (walkingType == 'Water') {
       addBlockedZone(landObjects);
       addBlockedZone(lavaObjects);
+      slimeImage = 'Slime2_Idle_body.png';
     } else if (walkingType == 'Lava') {
       addBlockedZone(waterObjects);
       addBlockedZone(landObjects);
+      slimeImage = 'Slime3_Idle_body.png';
     }
+    _player = Player(
+      position: position,
+      joystick: _joystick,
+      slimeImage: slimeImage,
+    )..debugMode = true;
+    world.add(_player);
+    camera.follow(_player, snap: true);
   }
 
   void addBlockedZone(ObjectGroup? zoneObjects) {
@@ -125,7 +144,7 @@ class TestGame extends FlameGame
 
   @override
   void onRemove() {
-    nfcDataNotifier.removeListener(_removeWalls);
+    nfcDataNotifier.removeListener(_updateWorldType);
     super.onRemove();
   }
 }

@@ -33,7 +33,7 @@ class NfcDataNotifier extends ChangeNotifier {
       do {
         print('starting session');
         Completer nfcDataProcessing = Completer();
-        await NfcManager.instance.startSession(
+        NfcManager.instance.startSession(
           pollingOptions: {NfcPollingOption.iso14443},
           onDiscovered: (NfcTag nfc) async =>
               _processNfcData(nfcDataProcessing: nfcDataProcessing, nfc: nfc),
@@ -47,6 +47,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required Completer nfcDataProcessing,
     required NfcTag nfc,
   }) async {
+  
     try {
       NfcData newNfc;
       final Ndef? ndef = await Ndef.from(nfc);
@@ -98,7 +99,9 @@ class NfcDataNotifier extends ChangeNotifier {
     print('scan completed');
 
     print('stopping session');
+
     await NfcManager.instance.stopSession();
+
     nfcDataProcessing.complete();
   }
 
@@ -113,35 +116,4 @@ class NfcDataNotifier extends ChangeNotifier {
       return '';
     }
   }
-
-  //  final ndefMessage = NdefMessage(          <-- à utiliser en cas de tests
-  //       records: [
-  //         NdefRecord(
-  //           typeNameFormat: .wellKnown,
-  //           type: utf8.encode('U'),
-  //           identifier: Uint8List.fromList([]),
-  //           payload: utf8.encode('Link'),
-  //         ),
-  //         NdefRecord(
-  //           typeNameFormat: .external,
-  //           type: utf8.encode('g:i'),
-  //           identifier: Uint8List.fromList([]),
-  //           payload: utf8.encode('1'),
-  //         ),
-  //         NdefRecord(
-  //           typeNameFormat: .external,
-  //           type: utf8.encode('g:i'),
-  //           identifier: Uint8List.fromList([]),
-  //           payload: utf8.encode('2'),
-  //         ),
-  //         NdefRecord(
-  //           typeNameFormat: .external,
-  //           type: utf8.encode('g:i'),
-  //           identifier: Uint8List.fromList([]),
-  //           payload: utf8.encode('3'),
-  //         ),
-  //       ],
-  //     );
-
-  //     await ndef.write(message: ndefMessage);
 }
