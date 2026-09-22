@@ -17,6 +17,7 @@ enum PlayerState {
 class Player extends SpriteAnimationGroupComponent<PlayerState>
     with KeyboardHandler, CollisionCallbacks, HasGameReference<TestGame> {
   Player({
+    required this.isBlocked,
     required this.slimeImage,
     this.joystick,
     required super.position,
@@ -31,7 +32,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   SpriteAnimation? rightIdle;
 
   final String slimeImage;
-
+  final bool isBlocked;
   final double hitBoxSize = 10;
   final JoystickComponent? joystick;
   final double moveSpeed = 100;
@@ -55,32 +56,33 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
   @override
   void update(double dt) {
-    if (joystick != null) {
-      if (joystick!.direction != JoystickDirection.idle) {
-        if (joystick!.relativeDelta.x > 0) {
-          if (joystick!.relativeDelta.y > 0.4)
-            current = PlayerState.bottomIdle;
-          else if (joystick!.relativeDelta.y < -0.4)
-            current = PlayerState.topIdle;
-          else
-            current = PlayerState.rightIdle;
-        } else if (joystick!.relativeDelta.x < 0) {
-          if (joystick!.relativeDelta.y > 0.4)
-            current = PlayerState.bottomIdle;
-          else if (joystick!.relativeDelta.y < -0.4)
-            current = PlayerState.topIdle;
-          else
-            current = PlayerState.leftIdle;
+    if (!isBlocked) {
+      if (joystick != null) {
+        if (joystick!.direction != JoystickDirection.idle) {
+          if (joystick!.relativeDelta.x > 0) {
+            if (joystick!.relativeDelta.y > 0.4)
+              current = PlayerState.bottomIdle;
+            else if (joystick!.relativeDelta.y < -0.4)
+              current = PlayerState.topIdle;
+            else
+              current = PlayerState.rightIdle;
+          } else if (joystick!.relativeDelta.x < 0) {
+            if (joystick!.relativeDelta.y > 0.4)
+              current = PlayerState.bottomIdle;
+            else if (joystick!.relativeDelta.y < -0.4)
+              current = PlayerState.topIdle;
+            else
+              current = PlayerState.leftIdle;
+          }
+          position.add(joystick!.relativeDelta * moveSpeed * dt);
         }
-        position.add(joystick!.relativeDelta * moveSpeed * dt);
       }
+
+      velocity.x = horizontalDirection * moveSpeed;
+
+      velocity.y = verticalDirection * moveSpeed;
+      position += velocity * dt;
     }
-
-    velocity.x = horizontalDirection * moveSpeed;
-
-    velocity.y = verticalDirection * moveSpeed;
-    position += velocity * dt;
-
     super.update(dt);
   }
 

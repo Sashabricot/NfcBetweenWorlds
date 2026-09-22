@@ -16,8 +16,8 @@ class TestGame extends FlameGame
   TestGame();
   String walkingType = '';
   late Player _player;
-  var wallsList = [];
-  var blockedZone = [];
+  List<PositionComponent> wallsList = [];
+  List<PositionComponent> blockedZone = [];
   var waterObjects;
   var landObjects;
   var lavaObjects;
@@ -73,6 +73,7 @@ class TestGame extends FlameGame
     lavaObjects = component.tileMap.getLayer<ObjectGroup>('LavaZone');
 
     _player = Player(
+        isBlocked: false,
         position: Vector2(spawnPoint.x, spawnPoint.y),
         joystick: _joystick,
         slimeImage: 'Slime1_Idle_body.png')
@@ -113,16 +114,19 @@ class TestGame extends FlameGame
     } else if (walkingType == 'Water') {
       addBlockedZone(landObjects);
       addBlockedZone(lavaObjects);
+
       slimeImage = 'Slime2_Idle_body.png';
     } else if (walkingType == 'Lava') {
       addBlockedZone(waterObjects);
       addBlockedZone(landObjects);
       slimeImage = 'Slime3_Idle_body.png';
     }
+    bool isBlocked = isPlayerInBlockedZone(position);
     _player = Player(
       position: position,
       joystick: _joystick,
       slimeImage: slimeImage,
+      isBlocked: isBlocked,
     )..debugMode = true;
     world.add(_player);
     camera.follow(_player, snap: true);
@@ -140,6 +144,10 @@ class TestGame extends FlameGame
         world.add(blockedZone.last);
       }
     }
+  }
+
+  bool isPlayerInBlockedZone(position) {
+    return blockedZone.any((zone) => zone.containsPoint(position));
   }
 
   @override
