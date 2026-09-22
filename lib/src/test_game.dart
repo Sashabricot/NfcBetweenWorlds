@@ -7,6 +7,7 @@ import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/widgets.dart';
 import 'package:testgame/src/game/actors/player.dart';
+import 'package:testgame/src/game/actors/player_state.dart';
 import 'package:testgame/src/game/objects/land.dart';
 import 'package:testgame/src/game/objects/wall.dart';
 import 'package:testgame/src/provider/nfc_data_notifier.dart';
@@ -14,14 +15,18 @@ import 'package:testgame/src/provider/nfc_data_notifier.dart';
 class TestGame extends FlameGame
     with HasCollisionDetection, HasKeyboardHandlerComponents {
   TestGame();
+
   String walkingType = '';
+
   late Player _player;
+  late JoystickComponent _joystick;
+
   List<PositionComponent> wallsList = [];
   List<PositionComponent> blockedZone = [];
-  var waterObjects;
-  var landObjects;
-  var lavaObjects;
-  late JoystickComponent _joystick;
+
+  ObjectGroup? waterObjects;
+  ObjectGroup? landObjects;
+  ObjectGroup? lavaObjects;
 
   @override
   Color backgroundColor() {
@@ -73,6 +78,7 @@ class TestGame extends FlameGame
     lavaObjects = component.tileMap.getLayer<ObjectGroup>('LavaZone');
 
     _player = Player(
+        playerState: PlayerState.bottomIdle,
         isBlocked: false,
         position: Vector2(spawnPoint.x, spawnPoint.y),
         joystick: _joystick,
@@ -102,7 +108,9 @@ class TestGame extends FlameGame
       world.remove(element);
     }
     blockedZone = [];
+
     walkingType = nfcDataNotifier.nfcType;
+    final playerState = _player.playerState;
     final position = _player.position;
     String slimeImage = '';
     world.remove(_player);
@@ -123,6 +131,7 @@ class TestGame extends FlameGame
     }
     bool isBlocked = isPlayerInBlockedZone(position);
     _player = Player(
+      playerState: playerState,
       position: position,
       joystick: _joystick,
       slimeImage: slimeImage,

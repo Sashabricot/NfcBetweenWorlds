@@ -2,21 +2,17 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/src/services/hardware_keyboard.dart';
+import 'package:testgame/src/game/actors/player_state.dart';
 import 'package:testgame/src/game/objects/land.dart';
 import 'package:testgame/src/game/objects/wall.dart';
 import 'package:testgame/src/test_game.dart';
 
-enum PlayerState {
-  topIdle,
-  bottomIdle,
-  leftIdle,
-  rightIdle,
-}
-
 class Player extends SpriteAnimationGroupComponent<PlayerState>
     with KeyboardHandler, CollisionCallbacks, HasGameReference<TestGame> {
   Player({
+    required this.playerState,
     required this.isBlocked,
     required this.slimeImage,
     this.joystick,
@@ -31,6 +27,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   SpriteAnimation? leftIdle;
   SpriteAnimation? rightIdle;
 
+  PlayerState playerState;
   final String slimeImage;
   final bool isBlocked;
   final double hitBoxSize = 10;
@@ -49,40 +46,45 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       PlayerState.leftIdle: leftIdle!,
       PlayerState.rightIdle: rightIdle!
     };
-    current = PlayerState.bottomIdle;
+    current = playerState;
     add(CircleHitbox(
         radius: hitBoxSize, anchor: Anchor.center, position: Vector2.all(32)));
   }
 
   @override
   void update(double dt) {
-    if (!isBlocked) {
-      if (joystick != null) {
-        if (joystick!.direction != JoystickDirection.idle) {
-          if (joystick!.relativeDelta.x > 0) {
-            if (joystick!.relativeDelta.y > 0.4)
-              current = PlayerState.bottomIdle;
-            else if (joystick!.relativeDelta.y < -0.4)
-              current = PlayerState.topIdle;
-            else
-              current = PlayerState.rightIdle;
-          } else if (joystick!.relativeDelta.x < 0) {
-            if (joystick!.relativeDelta.y > 0.4)
-              current = PlayerState.bottomIdle;
-            else if (joystick!.relativeDelta.y < -0.4)
-              current = PlayerState.topIdle;
-            else
-              current = PlayerState.leftIdle;
-          }
-          position.add(joystick!.relativeDelta * moveSpeed * dt);
+    Vector2 nextPosition = position;
+
+    if (joystick != null) {
+      if (joystick!.direction != JoystickDirection.idle) {
+        if (joystick!.relativeDelta.x > 0) {
+          if (joystick!.relativeDelta.y > 0.4)
+            playerState = PlayerState.bottomIdle;
+          else if (joystick!.relativeDelta.y < -0.4)
+            playerState = PlayerState.topIdle;
+          else
+            playerState = PlayerState.rightIdle;
+        } else if (joystick!.relativeDelta.x < 0) {
+          if (joystick!.relativeDelta.y > 0.4)
+            playerState = PlayerState.bottomIdle;
+          else if (joystick!.relativeDelta.y < -0.4)
+            playerState = PlayerState.topIdle;
+          else
+            playerState = PlayerState.leftIdle;
         }
+        current = playerState;
+        nextPosition += (joystick!.relativeDelta * moveSpeed * dt);
       }
-
-      velocity.x = horizontalDirection * moveSpeed;
-
-      velocity.y = verticalDirection * moveSpeed;
-      position += velocity * dt;
     }
+
+    velocity.x = horizontalDirection * moveSpeed;
+    velocity.y = verticalDirection * moveSpeed;
+    nextPosition += velocity * dt;
+
+    if (!isBlocked) {
+      position = nextPosition;
+    }
+
     super.update(dt);
   }
 

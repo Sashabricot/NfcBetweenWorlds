@@ -32,22 +32,16 @@ class NfcDataNotifier extends ChangeNotifier {
     } else {
       NfcManager.instance.stopSession();
       print('starting session');
-      Completer nfcDataProcessing = Completer();
       NfcManager.instance.startSession(
         pollingOptions: {NfcPollingOption.iso14443},
-        onDiscovered: (NfcTag nfc) async =>
-            _processNfcData(nfcDataProcessing: nfcDataProcessing, nfc: nfc),
+        onDiscovered: (NfcTag nfc) async => _processNfcData(nfc: nfc),
       );
-      await nfcDataProcessing.future;
     }
   }
 
   Future<void> _processNfcData({
-    required Completer nfcDataProcessing,
     required NfcTag nfc,
   }) async {
-    print('found, stopping session and blocking android');
-
     try {
       NfcData newNfc;
       final Ndef? ndef = await Ndef.from(nfc);
