@@ -22,7 +22,7 @@ class NfcDataNotifier extends ChangeNotifier {
   bool get found => _found;
   String get nfcType => _nfcType;
 
-  Future<void> startNfcRead() async {
+  Future<void> startNfcCardTypeScan() async {
     NfcAvailability availability =
         await NfcManager.instance.checkAvailability();
     if (availability == NfcAvailability.disabled ||
@@ -30,16 +30,15 @@ class NfcDataNotifier extends ChangeNotifier {
       print('unavailable or unsupported');
       throw Exception('NFC not available');
     } else {
-      do {
-        print('starting session');
-        Completer nfcDataProcessing = Completer();
-        NfcManager.instance.startSession(
-          pollingOptions: {NfcPollingOption.iso14443},
-          onDiscovered: (NfcTag nfc) async =>
-              _processNfcData(nfcDataProcessing: nfcDataProcessing, nfc: nfc),
-        );
-        await nfcDataProcessing.future;
-      } while (true);
+      NfcManager.instance.stopSession();
+      print('starting session');
+      Completer nfcDataProcessing = Completer();
+      NfcManager.instance.startSession(
+        pollingOptions: {NfcPollingOption.iso14443},
+        onDiscovered: (NfcTag nfc) async =>
+            _processNfcData(nfcDataProcessing: nfcDataProcessing, nfc: nfc),
+      );
+      await nfcDataProcessing.future;
     }
   }
 
@@ -47,7 +46,8 @@ class NfcDataNotifier extends ChangeNotifier {
     required Completer nfcDataProcessing,
     required NfcTag nfc,
   }) async {
-  
+    print('found, stopping session and blocking android');
+
     try {
       NfcData newNfc;
       final Ndef? ndef = await Ndef.from(nfc);
@@ -97,12 +97,6 @@ class NfcDataNotifier extends ChangeNotifier {
       print('$e');
     }
     print('scan completed');
-
-    print('stopping session');
-
-    await NfcManager.instance.stopSession();
-
-    nfcDataProcessing.complete();
   }
 
   String _parseNfcUid(Uint8List? nfcId) {

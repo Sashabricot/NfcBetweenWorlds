@@ -33,7 +33,7 @@ class TestGame extends FlameGame
   @override
   FutureOr<void> onLoad() async {
     nfcDataNotifier.addListener(_updateWorldType);
-    nfcDataNotifier.startNfcRead();
+    nfcDataNotifier.startNfcCardTypeScan();
     await images.loadAll([
       'Slime1_Idle_body.png',
       'Slime2_Idle_body.png',
