@@ -1,8 +1,10 @@
-import 'package:flame/game.dart';
-import 'package:flutter/widgets.dart';
-
-import 'package:testgame/src/test_game.dart';
+import 'package:flutter/material.dart';
+import 'package:nfc_between_worlds/splash_screen_page.dart';
 
 void main() {
-  runApp(GameWidget(game: TestGame(),));
+  WidgetsFlutterBinding.ensureInitialized;
+  runApp(MaterialApp(
+    home: SplashScreenPage(),
+    debugShowCheckedModeBanner: false,
+  ));
 }

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:testgame/src/models/nfc_data.dart';
+import 'package:nfc_between_worlds/src/models/nfc_data.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart';
@@ -31,7 +31,6 @@ class NfcDataNotifier extends ChangeNotifier {
       throw Exception('NFC not available');
     } else {
       NfcManager.instance.stopSession();
-      print('starting session');
       NfcManager.instance.startSession(
         pollingOptions: {NfcPollingOption.iso14443},
         onDiscovered: (NfcTag nfc) async => _processNfcData(nfc: nfc),

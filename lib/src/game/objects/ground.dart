@@ -2,10 +2,8 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:testgame/src/test_game.dart';
 
-class Ground extends PositionComponent
-    with CollisionCallbacks, HasGameReference<TestGame> {
+class Ground extends PositionComponent {
   Ground() : super();
 
   @override

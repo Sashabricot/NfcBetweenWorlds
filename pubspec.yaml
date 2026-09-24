@@ -1,5 +1,5 @@
-name: testgame
-description: TestGame Using Flame
+name: nfc_between_worlds
+description: First Game Using flame
 version: 0.0.0
 publish_to: none
 
@@ -14,6 +14,7 @@ dependencies:
   flame_tiled: ^3.1.2
   nfc_manager: ^4.2.1
   nfc_manager_ndef: ^1.1.0
+  flame_splash_screen: ^0.3.1+3
 
 flutter:
   assets:

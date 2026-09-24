@@ -1,32 +1,33 @@
 import 'dart:async';
-
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
-import 'package:flame/input.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flutter/widgets.dart';
-import 'package:testgame/src/game/actors/player.dart';
-import 'package:testgame/src/game/actors/player_state.dart';
-import 'package:testgame/src/game/objects/land.dart';
-import 'package:testgame/src/game/objects/wall.dart';
-import 'package:testgame/src/provider/nfc_data_notifier.dart';
+import 'package:nfc_between_worlds/src/game/actors/player.dart';
+import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
+import 'package:nfc_between_worlds/src/game/objects/ground.dart';
+import 'package:nfc_between_worlds/src/game/objects/key.dart';
+import 'package:nfc_between_worlds/src/game/objects/wall.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
-class TestGame extends FlameGame
-    with HasCollisionDetection, HasKeyboardHandlerComponents {
+class TestGame extends FlameGame with HasCollisionDetection {
   TestGame();
 
   String walkingType = '';
 
   late Player _player;
   late JoystickComponent _joystick;
+  late KeyItem _key;
 
   List<PositionComponent> wallsList = [];
   List<PositionComponent> blockedZone = [];
+  late PositionComponent door;
 
   ObjectGroup? waterObjects;
   ObjectGroup? landObjects;
   ObjectGroup? lavaObjects;
+  ObjectGroup? doorObjects;
 
   @override
   Color backgroundColor() {
@@ -39,12 +40,14 @@ class TestGame extends FlameGame
   FutureOr<void> onLoad() async {
     nfcDataNotifier.addListener(_updateWorldType);
     nfcDataNotifier.startNfcCardTypeScan();
+
     await images.loadAll([
       'Slime1_Idle_body.png',
       'Slime2_Idle_body.png',
       'Slime3_Idle_body.png',
-      'ember.png',
       'joystick.png',
+      'key.png',
+      'box.png',
     ]);
 
     final sheet = SpriteSheet.fromColumnsAndRows(
@@ -65,70 +68,85 @@ class TestGame extends FlameGame
       margin: const EdgeInsets.only(left: 40, bottom: 40),
     );
 
-    final component = await TiledComponent.load(
+    final firstMap = await TiledComponent.load(
       'first_map.tmx',
       Vector2.all(32),
     );
-    final spawnPoint =
-        component.tileMap.getLayer<ObjectGroup>('SpawnPoint')!.objects.first;
 
-    final wallObjects = component.tileMap.getLayer<ObjectGroup>('Wall');
-    waterObjects = component.tileMap.getLayer<ObjectGroup>('WaterZone');
-    landObjects = component.tileMap.getLayer<ObjectGroup>('LandZone');
-    lavaObjects = component.tileMap.getLayer<ObjectGroup>('LavaZone');
+    final spawnPoint =
+        firstMap.tileMap.getLayer<ObjectGroup>('SpawnPoint')!.objects.first;
+    final wallObjects = firstMap.tileMap.getLayer<ObjectGroup>('Wall');
+
+    waterObjects = firstMap.tileMap.getLayer<ObjectGroup>('WaterZone');
+    landObjects = firstMap.tileMap.getLayer<ObjectGroup>('LandZone');
+    lavaObjects = firstMap.tileMap.getLayer<ObjectGroup>('LavaZone');
+    doorObjects = firstMap.tileMap.getLayer<ObjectGroup>('Door');
 
     _player = Player(
         playerState: PlayerState.bottomIdle,
         isBlocked: false,
         position: Vector2(spawnPoint.x, spawnPoint.y),
         joystick: _joystick,
-        slimeImage: 'Slime1_Idle_body.png')
-      ..debugMode = true;
-    world.add(component);
+        slimeImage: 'Slime1_Idle_body.png');
+
+    world.add(firstMap);
 
     for (var wall in wallObjects!.objects) {
       wallsList.add(Wall()
         ..position = Vector2(wall.x, wall.y)
         ..width = wall.width
         ..height = wall.height
-        ..debugMode = true
         ..debugColor = Color.fromARGB(1, 231, 2, 193));
       world.add(wallsList.last);
     }
-    addBlockedZone(waterObjects);
-    world.add(_player);
+    
+    door = Wall()
+      ..position =
+          Vector2(doorObjects!.objects.first.x, doorObjects!.objects.first.y)
+      ..width = doorObjects!.objects.first.width
+      ..height = doorObjects!.objects.first.height
+      ..debugMode = true;
 
+    _key = KeyItem(position: Vector2(spawnPoint.x + 64, spawnPoint.y))
+      ..debugMode = true;
+
+    addBlockedZone(waterObjects);
+    world.add(_key);
+    world.add(_player);
+    world.add(door);
     camera.follow(_player, snap: true);
     camera.viewport.add(_joystick);
     return super.onLoad();
   }
 
   void _updateWorldType() {
-    for (var element in blockedZone) {
-      world.remove(element);
+    for (PositionComponent zone in blockedZone) {
+      world.remove(zone);
     }
+    String slimeImage = '';
+    final playerState = _player.playerState;
+    final position = _player.position;
+
     blockedZone = [];
 
     walkingType = nfcDataNotifier.nfcType;
-    final playerState = _player.playerState;
-    final position = _player.position;
-    String slimeImage = '';
+
     world.remove(_player);
-
-    if (walkingType == 'Land') {
-      addBlockedZone(waterObjects);
-      addBlockedZone(lavaObjects);
-      slimeImage = 'Slime1_Idle_body.png';
-    } else if (walkingType == 'Water') {
-      addBlockedZone(landObjects);
-      addBlockedZone(lavaObjects);
-
-      slimeImage = 'Slime2_Idle_body.png';
-    } else if (walkingType == 'Lava') {
-      addBlockedZone(waterObjects);
-      addBlockedZone(landObjects);
-      slimeImage = 'Slime3_Idle_body.png';
+    switch (walkingType) {
+      case 'Land':
+        addBlockedZone(waterObjects);
+        addBlockedZone(lavaObjects);
+        slimeImage = 'Slime1_Idle_body.png';
+      case 'Water':
+        addBlockedZone(landObjects);
+        addBlockedZone(lavaObjects);
+        slimeImage = 'Slime2_Idle_body.png';
+      case 'Lava':
+        addBlockedZone(waterObjects);
+        addBlockedZone(landObjects);
+        slimeImage = 'Slime3_Idle_body.png';
     }
+
     bool isBlocked = isPlayerInBlockedZone(position);
     _player = Player(
       playerState: playerState,
@@ -136,7 +154,8 @@ class TestGame extends FlameGame
       joystick: _joystick,
       slimeImage: slimeImage,
       isBlocked: isBlocked,
-    )..debugMode = true;
+    );
+
     world.add(_player);
     camera.follow(_player, snap: true);
   }
@@ -148,7 +167,6 @@ class TestGame extends FlameGame
           ..position = Vector2(zone.x, zone.y)
           ..width = zone.width
           ..height = zone.height
-          ..debugMode = true
           ..debugColor = Color.fromARGB(1, 88, 148, 9));
         world.add(blockedZone.last);
       }
@@ -163,5 +181,9 @@ class TestGame extends FlameGame
   void onRemove() {
     nfcDataNotifier.removeListener(_updateWorldType);
     super.onRemove();
+  }
+
+  void collectKey() {
+    world.remove(door);
   }
 }

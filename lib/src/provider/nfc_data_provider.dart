@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:testgame/src/provider/nfc_data_notifier.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class NfcDataProvider extends InheritedWidget {
   const NfcDataProvider({
