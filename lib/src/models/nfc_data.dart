@@ -10,6 +10,7 @@ class NfcData {
     this.characterPosition,
     this.characterItems,
     this.slimeType,
+    this.characterLevel,
   }) {
     characterPosition = '';
     characterItems = [];
@@ -25,6 +26,8 @@ class NfcData {
               characterPosition = utf8.decode(record.payload);
             case 'g:i':
               characterItems!.add(record);
+            case 'g:l':
+              characterLevel = utf8.decode(record.payload);
             case 's:t':
               slimeType = record.payload;
           }
@@ -38,6 +41,7 @@ class NfcData {
   final String uid;
   String? characterPosition;
   List<NdefRecord>? characterItems;
+  String? characterLevel;
 
   String _getType(NdefRecord record) {
     switch (record.typeNameFormat) {

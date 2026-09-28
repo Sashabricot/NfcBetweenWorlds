@@ -22,6 +22,7 @@ class MainMenu extends StatelessWidget {
                   nfcDataNotifier: nfcDataNotifier,
                   characterPosition: characterSaveData['characterPosition'],
                   slimeType: characterSaveData['nfcType'],
+                  level: characterSaveData['level'],
                 );
               },
               overlayBuilderMap: {

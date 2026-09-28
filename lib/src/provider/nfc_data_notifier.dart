@@ -46,6 +46,7 @@ class NfcDataNotifier extends ChangeNotifier {
   Future<void> savePlayerDataOnNfc({
     required Vector2 position,
     required Completer stopNfcWriting,
+    required String level,
   }) async {
     shouldUpdate = false;
     isProcessing = true;
@@ -57,6 +58,7 @@ class NfcDataNotifier extends ChangeNotifier {
         nfc: nfc,
         position: position,
         stopNfcWriting: stopNfcWriting,
+        level: level,
       ),
     );
     await stopNfcWriting.future;
@@ -68,6 +70,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required NfcTag nfc,
     required Vector2 position,
     required Completer stopNfcWriting,
+    required String level,
   }) async {
     try {
       final String positionString = '${position.x},${position.y}';
@@ -84,6 +87,12 @@ class NfcDataNotifier extends ChangeNotifier {
             type: utf8.encode('s:t'),
             identifier: Uint8List.fromList([]),
             payload: _nfcUtf8Type,
+          ),
+          NdefRecord(
+            typeNameFormat: TypeNameFormat.external,
+            type: utf8.encode('g:l'),
+            identifier: Uint8List.fromList([]),
+            payload: utf8.encode(level),
           ),
         ],
       );
@@ -199,6 +208,7 @@ class NfcDataNotifier extends ChangeNotifier {
     Map<String, dynamic> characterSaveData = {};
     Vector2? characterPosition;
     NfcData newNfc;
+    String? level;
     try {
       final Ndef? ndef = Ndef.from(nfc);
       final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
@@ -237,9 +247,13 @@ class NfcDataNotifier extends ChangeNotifier {
           throw Exception('Please use a new NFC card');
         }
       }
+      if (newNfc.characterLevel != null) {
+        level = newNfc.characterLevel;
+      }
       characterSaveData.addAll({
         'characterPosition': characterPosition,
         'nfcType': nfcSavedType,
+        'level': level,
       });
       stopNfcSaveReading.complete();
       return characterSaveData;

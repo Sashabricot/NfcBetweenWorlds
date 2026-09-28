@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
-import 'package:nfc_between_worlds/src/game/objects/key.dart';
+import 'package:nfc_between_worlds/src/game/objects/teleporter.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
@@ -17,25 +17,30 @@ class TestGame extends FlameGame
     required this.nfcDataNotifier,
     this.characterPosition,
     this.slimeType,
+    this.level,
   });
   String? slimeType;
   Vector2? characterPosition;
+  String? level;
   final NfcDataNotifier nfcDataNotifier;
   String walkingType = '';
   String slimeImage = '';
 
   late Player _player;
   late JoystickComponent _joystick;
-  late KeyItem _key;
+  // late KeyItem _key;
 
   List<PositionComponent> wallsList = [];
   List<PositionComponent> blockedZone = [];
+  List<PositionComponent> teleporterZone = [];
   late PositionComponent door;
 
   ObjectGroup? waterObjects;
   ObjectGroup? landObjects;
   ObjectGroup? lavaObjects;
   ObjectGroup? doorObjects;
+  ObjectGroup? teleportationObjetcs;
+  ObjectGroup? firstMapTeleporter;
 
   @override
   Color backgroundColor() {
@@ -54,7 +59,145 @@ class TestGame extends FlameGame
       'key.png',
       'box.png',
     ]);
+    _loadJoystick();
+    level ??= 'first_map.tmx';
+    await _loadLevel(level!);
 
+    nfcDataNotifier.startNfcCardTypeScan();
+
+    return super.onLoad();
+  }
+
+  Future<void> _loadLevel(String level) async {
+    final levelMap = await TiledComponent.load(level, Vector2.all(32));
+
+    final spawnPoint = levelMap.tileMap
+        .getLayer<ObjectGroup>('SpawnPoint')!
+        .objects
+        .first;
+
+    final wallObjects = levelMap.tileMap.getLayer<ObjectGroup>('Wall');
+    bool isBlocked = false;
+
+    waterObjects = levelMap.tileMap.getLayer<ObjectGroup>('WaterZone');
+    landObjects = levelMap.tileMap.getLayer<ObjectGroup>('LandZone');
+    lavaObjects = levelMap.tileMap.getLayer<ObjectGroup>('LavaZone');
+    doorObjects = levelMap.tileMap.getLayer<ObjectGroup>('Door');
+    teleportationObjetcs = levelMap.tileMap.getLayer<ObjectGroup>('Teleporter');
+    firstMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
+      'FirstMapTeleporter',
+    );
+
+    slimeType ??= 'Land';
+
+    _loadWalkingType();
+
+    if (characterPosition != null) {
+      isBlocked = isPlayerInBlockedZone(characterPosition!);
+    } else {
+      characterPosition = Vector2(spawnPoint.x, spawnPoint.y);
+      isBlocked = isPlayerInBlockedZone(characterPosition!);
+    }
+
+    _player = Player(
+      playerState: PlayerState.bottomIdle,
+      isBlocked: isBlocked,
+      position: characterPosition,
+      joystick: _joystick,
+      slimeImage: slimeImage,
+    );
+
+    world.add(levelMap);
+    if (wallObjects != null) {
+      for (var wall in wallObjects.objects) {
+        wallsList.add(
+          Wall()
+            ..position = Vector2(wall.x, wall.y)
+            ..width = wall.width
+            ..height = wall.height
+            ..debugColor = Color.fromARGB(1, 231, 2, 193),
+        );
+        world.add(wallsList.last);
+      }
+    }
+    _loadTeleporter();
+
+    world.add(_player);
+    camera.follow(_player, snap: true);
+    camera.viewport.add(_joystick);
+    // door = Wall()
+    //   ..position = Vector2(
+    //     doorObjects!.objects.first.x,
+    //     doorObjects!.objects.first.y,
+    //   )
+    //   ..width = doorObjects!.objects.first.width
+    //   ..height = doorObjects!.objects.first.height
+    //   ..debugMode = true;
+
+    // _key = KeyItem(position: Vector2(spawnPoint.x + 64, spawnPoint.y))
+    //   ..debugMode = true;
+
+    // world.add(_key);
+
+    // world.add(door);
+  }
+
+  void _loadTeleporter() {
+    String level = '';
+    if (teleportationObjetcs != null) {
+      level = 'teleportation_map.tmx';
+      _addTeleporterObjects(
+        level: level,
+        teleportationObjectGroup: teleportationObjetcs,
+      );
+    }
+    if (firstMapTeleporter != null) {
+      level = 'first_map.tmx';
+      _addTeleporterObjects(
+        level: level,
+        teleportationObjectGroup: firstMapTeleporter,
+      );
+    }
+  }
+
+  void _addTeleporterObjects({
+    required String level,
+    required ObjectGroup? teleportationObjectGroup,
+  }) {
+    if (teleportationObjectGroup != null) {
+      for (var teleporter in teleportationObjectGroup.objects) {
+        teleporterZone.add(
+          Teleporter(level)
+            ..position = Vector2(teleporter.x, teleporter.y)
+            ..width = teleporter.width
+            ..height = teleporter.height,
+        );
+        world.add(teleporterZone.last);
+      }
+    }
+  }
+
+  void changeLevel(String newLevel) {
+    _resetWorldValues();
+    level = newLevel;
+    _loadLevel(newLevel);
+  }
+
+  void _resetWorldValues() {
+    world.children.whereType<TiledComponent>().forEach(
+      (element) => element.removeFromParent(),
+    );
+    world.children.whereType<PositionComponent>().forEach(
+      (element) => element.removeFromParent(),
+    );
+    wallsList = [];
+    blockedZone = [];
+    teleporterZone = [];
+    world.remove(_player);
+    characterPosition = null;
+  }
+
+  void _loadJoystick() {
     final sheet = SpriteSheet.fromColumnsAndRows(
       image: images.fromCache('joystick.png'),
       columns: 6,
@@ -72,104 +215,9 @@ class TestGame extends FlameGame
       ),
       margin: const EdgeInsets.only(left: 40, bottom: 40),
     );
-
-    final firstMap = await TiledComponent.load(
-      'first_map.tmx',
-      Vector2.all(32),
-    );
-
-    final spawnPoint = firstMap.tileMap
-        .getLayer<ObjectGroup>('SpawnPoint')!
-        .objects
-        .first;
-    final wallObjects = firstMap.tileMap.getLayer<ObjectGroup>('Wall');
-    bool isBlocked = false;
-    waterObjects = firstMap.tileMap.getLayer<ObjectGroup>('WaterZone');
-    landObjects = firstMap.tileMap.getLayer<ObjectGroup>('LandZone');
-    lavaObjects = firstMap.tileMap.getLayer<ObjectGroup>('LavaZone');
-    doorObjects = firstMap.tileMap.getLayer<ObjectGroup>('Door');
-    slimeType ??= 'Land';
-    loadWalkingType();
-    if (characterPosition != null) {
-      isBlocked = isPlayerInBlockedZone(characterPosition!);
-    } else {
-      characterPosition = Vector2(spawnPoint.x, spawnPoint.y);
-    }
-
-    _player = Player(
-      playerState: PlayerState.bottomIdle,
-      isBlocked: isBlocked,
-      position: characterPosition,
-      joystick: _joystick,
-      slimeImage: slimeImage,
-    );
-
-    world.add(firstMap);
-
-    for (var wall in wallObjects!.objects) {
-      wallsList.add(
-        Wall()
-          ..position = Vector2(wall.x, wall.y)
-          ..width = wall.width
-          ..height = wall.height
-          ..debugColor = Color.fromARGB(1, 231, 2, 193),
-      );
-      world.add(wallsList.last);
-    }
-
-    door = Wall()
-      ..position = Vector2(
-        doorObjects!.objects.first.x,
-        doorObjects!.objects.first.y,
-      )
-      ..width = doorObjects!.objects.first.width
-      ..height = doorObjects!.objects.first.height
-      ..debugMode = true;
-
-    _key = KeyItem(position: Vector2(spawnPoint.x + 64, spawnPoint.y))
-      ..debugMode = true;
-
-    world.add(_key);
-    world.add(_player);
-    world.add(door);
-    camera.follow(_player, snap: true);
-    camera.viewport.add(_joystick);
-
-    nfcDataNotifier.startNfcCardTypeScan();
-
-    return super.onLoad();
   }
 
-  void _updateWorldType() {
-    if (nfcDataNotifier.shouldUpdate) {
-      for (PositionComponent zone in blockedZone) {
-        world.remove(zone);
-      }
-
-      final playerState = _player.playerState;
-      final position = _player.position;
-
-      blockedZone = [];
-      slimeType = nfcDataNotifier.nfcType;
-
-      world.remove(_player);
-      loadWalkingType();
-
-      bool isBlocked = isPlayerInBlockedZone(position);
-      _player = Player(
-        playerState: playerState,
-        position: position,
-        joystick: _joystick,
-        slimeImage: slimeImage,
-        isBlocked: isBlocked,
-      );
-
-      world.add(_player);
-      camera.follow(_player, snap: true);
-    }
-  }
-
-  void loadWalkingType() {
+  void _loadWalkingType() {
     switch (slimeType) {
       case 'Land':
         addBlockedZone(waterObjects);
@@ -205,21 +253,45 @@ class TestGame extends FlameGame
     return blockedZone.any((zone) => zone.containsPoint(position));
   }
 
-  @override
-  void onRemove() {
-    nfcDataNotifier.removeListener(_updateWorldType);
-    super.onRemove();
-  }
+  void _updateWorldType() {
+    if (nfcDataNotifier.shouldUpdate) {
+      for (PositionComponent zone in blockedZone) {
+        world.remove(zone);
+      }
 
-  void collectKey() {
-    world.remove(door);
+      final playerState = _player.playerState;
+      final position = _player.position;
+
+      blockedZone = [];
+      slimeType = nfcDataNotifier.nfcType;
+
+      world.remove(_player);
+      _loadWalkingType();
+
+      bool isBlocked = isPlayerInBlockedZone(position);
+      _player = Player(
+        playerState: playerState,
+        position: position,
+        joystick: _joystick,
+        slimeImage: slimeImage,
+        isBlocked: isBlocked,
+      );
+
+      world.add(_player);
+      camera.follow(_player, snap: true);
+    }
   }
 
   Future<void> savePlayerDataOnNfc({required Completer stopNfcWriting}) async {
     await nfcDataNotifier.savePlayerDataOnNfc(
       position: _player.position,
+      level: level!,
       stopNfcWriting: stopNfcWriting,
     );
+  }
+
+  void collectKey() {
+    world.remove(door);
   }
 
   @override
@@ -231,6 +303,12 @@ class TestGame extends FlameGame
       resumeEngine();
     }
     super.didChangeAppLifecycleState(state);
+  }
+
+  @override
+  void onRemove() {
+    nfcDataNotifier.removeListener(_updateWorldType);
+    super.onRemove();
   }
 
   @override
