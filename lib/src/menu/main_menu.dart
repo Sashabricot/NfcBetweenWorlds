@@ -1,13 +1,43 @@
 import 'dart:async';
 
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:nfc_between_worlds/src/overlays/save_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
+import 'package:nfc_between_worlds/src/test_game.dart';
 
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key, required this.nfcDataNotifier});
   final NfcDataNotifier nfcDataNotifier;
   @override
   Widget build(BuildContext context) {
+    void loadGame(Map<String, dynamic>? characterSaveData) {
+      if (nfcDataNotifier.error == null && characterSaveData != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GameWidget<TestGame>.controlled(
+              gameFactory: () {
+                return TestGame(
+                  nfcDataNotifier: nfcDataNotifier,
+                  characterPosition: characterSaveData['characterPosition'],
+                  slimeType: characterSaveData['nfcType'],
+                );
+              },
+              overlayBuilderMap: {
+                'SaveButton': (_, game) =>
+                    SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
+              },
+              loadingBuilder: (context) =>
+                  Center(child: CircularProgressIndicator()),
+
+              initialActiveOverlays: const ['SaveButton'],
+            ),
+          ),
+        );
+      }
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -26,20 +56,24 @@ class MainMenu extends StatelessWidget {
           ),
 
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.5,
+            top: MediaQuery.of(context).size.height * 0.65,
             child: Center(
               child: Column(
                 crossAxisAlignment: .center,
                 children: [
                   TextButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Completer stopNfcSaveReading = Completer();
-                      nfcDataNotifier.loadNfcSave(
-                        context: context,
-                        startNewGame: false,
-                        stopNfcSaveReading: stopNfcSaveReading,
-                        nfcDataNotifier: nfcDataNotifier,
-                      );
+                      nfcDataNotifier
+                          .loadNfcSave(
+                            context: context,
+                            startNewGame: false,
+                            stopNfcSaveReading: stopNfcSaveReading,
+                            nfcDataNotifier: nfcDataNotifier,
+                          )
+                          .then(
+                            (characterSaveData) => loadGame(characterSaveData),
+                          );
                       showDialog(
                         barrierDismissible: false,
                         context: context,
@@ -94,33 +128,33 @@ class MainMenu extends StatelessWidget {
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      Completer stopNfcSaveReading = Completer();
-                      nfcDataNotifier.loadNfcSave(
-                        context: context,
-                        startNewGame: true,
-                        stopNfcSaveReading: stopNfcSaveReading,
-                        nfcDataNotifier: nfcDataNotifier,
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(),
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.black,
-                      ),
+                  // TextButton(
+                  //   onPressed: () {
+                  //     Completer stopNfcSaveReading = Completer();
+                  //     nfcDataNotifier.loadNfcSave(
+                  //       context: context,
+                  //       startNewGame: true,
+                  //       stopNfcSaveReading: stopNfcSaveReading,
+                  //       nfcDataNotifier: nfcDataNotifier,
+                  //     );
+                  //   },
+                  //   child: Container(
+                  //     decoration: BoxDecoration(
+                  //       border: Border.all(),
+                  //       borderRadius: BorderRadius.circular(8),
+                  //       color: Colors.black,
+                  //     ),
 
-                      width: 256,
-                      height: 44,
-                      child: Center(
-                        child: Text(
-                          'Nouvelle Partie',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
+                  //     width: 256,
+                  //     height: 44,
+                  //     child: Center(
+                  //       child: Text(
+                  //         'Nouvelle Partie',
+                  //         style: TextStyle(color: Colors.white),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),

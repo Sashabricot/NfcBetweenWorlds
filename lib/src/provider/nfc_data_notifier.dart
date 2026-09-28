@@ -5,8 +5,6 @@ import 'dart:typed_data';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
-import 'package:nfc_between_worlds/src/overlays/save_button.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart';
@@ -166,52 +164,39 @@ class NfcDataNotifier extends ChangeNotifier {
     }
   }
 
-  Future<void> loadNfcSave({
+  Future<Map<String, dynamic>?> loadNfcSave({
     required BuildContext context,
     required bool startNewGame,
     required Completer stopNfcSaveReading,
     required NfcDataNotifier nfcDataNotifier,
   }) async {
     error = null;
-    if (!startNewGame) {
-      NfcManager.instance.stopSession();
-      NfcManager.instance.startSession(
-        pollingOptions: {NfcPollingOption.iso14443},
-        onDiscovered: (NfcTag nfc) async => _loadNfcSaveData(
+    Map<String, dynamic>? characterSaveData;
+    NfcManager.instance.stopSession();
+    NfcManager.instance.startSession(
+      pollingOptions: {NfcPollingOption.iso14443},
+      onDiscovered: (NfcTag nfc) async => {
+        characterSaveData = await _loadNfcSaveData(
           nfc: nfc,
           stopNfcSaveReading: stopNfcSaveReading,
           context: context,
           nfcDataNotifier: nfcDataNotifier,
         ),
-      );
-      await stopNfcSaveReading.future;
-      blockSystemNfc();
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GameWidget<TestGame>.controlled(
-            loadingBuilder: (context) =>
-                Center(child: CircularProgressIndicator()),
-            gameFactory: () => TestGame(nfcDataNotifier: nfcDataNotifier),
-            overlayBuilderMap: {
-              'SaveButton': (_, game) =>
-                  SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
-            },
-            initialActiveOverlays: const ['SaveButton'],
-          ),
-        ),
-      );
-    }
+      },
+    );
+    await stopNfcSaveReading.future;
+    blockSystemNfc();
+    return characterSaveData;
   }
 
-  Future<void> _loadNfcSaveData({
+  Future<Map<String, dynamic>> _loadNfcSaveData({
     required NfcTag nfc,
     required Completer stopNfcSaveReading,
     required BuildContext context,
     required NfcDataNotifier nfcDataNotifier,
   }) async {
     await blockSystemNfc();
+    Map<String, dynamic> characterSaveData = {};
     Vector2? characterPosition;
     NfcData newNfc;
     try {
@@ -220,7 +205,7 @@ class NfcDataNotifier extends ChangeNotifier {
 
       final String nfcUid;
 
-      if (ndef == null) throw ('Tag is not ndef');
+      if (ndef == null) throw Exception('Tag is not ndef');
       if (nfcTag != null) {
         nfcUid = _parseNfcUid(nfcTag.id);
       } else {
@@ -229,12 +214,13 @@ class NfcDataNotifier extends ChangeNotifier {
 
       newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
       _nfcTags[nfcUid] = newNfc;
-
+      String? nfcSavedType;
       if (newNfc.slimeType != null) {
         switch (newNfc.slimeType) {
           case [50]:
             _nfcUtf8Type = newNfc.slimeType!;
             _nfcType = 'Land';
+
           case [49]:
             _nfcUtf8Type = newNfc.slimeType!;
             _nfcType = 'Water';
@@ -243,42 +229,26 @@ class NfcDataNotifier extends ChangeNotifier {
             _nfcType = 'Lava';
           default:
         }
-      } else {
-        throw Exception('Tag has no game save');
+        nfcSavedType = _nfcType;
       }
       if (newNfc.characterPosition != null) {
         characterPosition = parseCharacterPosition(newNfc.characterPosition!);
-        if (characterPosition == null) {
-          throw Exception('Tag has no game save');
+        if (characterPosition == null && newNfc.slimeType != null) {
+          throw Exception('Please use a new NFC card');
         }
-      } else {
-        throw Exception('Tag has no game save');
       }
-
+      characterSaveData.addAll({
+        'characterPosition': characterPosition,
+        'nfcType': nfcSavedType,
+      });
       stopNfcSaveReading.complete();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GameWidget<TestGame>.controlled(
-            gameFactory: () => TestGame(
-              nfcDataNotifier: nfcDataNotifier,
-              characterPosition: characterPosition,
-              slimeType: _nfcType,
-            ),
-            overlayBuilderMap: {
-              'SaveButton': (_, game) =>
-                  SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
-            },
-            loadingBuilder: (context) =>
-                Center(child: CircularProgressIndicator()),
-            initialActiveOverlays: const ['SaveButton'],
-          ),
-        ),
-      );
+      return characterSaveData;
     } on Exception catch (e) {
+      characterSaveData = {};
       stopNfcSaveReading.complete();
       error = e;
       notifyListeners();
+      return characterSaveData;
     }
   }
 

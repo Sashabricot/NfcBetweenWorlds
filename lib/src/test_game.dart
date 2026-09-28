@@ -54,7 +54,6 @@ class TestGame extends FlameGame
       'key.png',
       'box.png',
     ]);
-    slimeType ??= 'Land';
 
     final sheet = SpriteSheet.fromColumnsAndRows(
       image: images.fromCache('joystick.png'),
@@ -89,7 +88,7 @@ class TestGame extends FlameGame
     landObjects = firstMap.tileMap.getLayer<ObjectGroup>('LandZone');
     lavaObjects = firstMap.tileMap.getLayer<ObjectGroup>('LavaZone');
     doorObjects = firstMap.tileMap.getLayer<ObjectGroup>('Door');
-
+    slimeType ??= 'Land';
     loadWalkingType();
     if (characterPosition != null) {
       isBlocked = isPlayerInBlockedZone(characterPosition!);
