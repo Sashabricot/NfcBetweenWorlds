@@ -5,16 +5,20 @@ import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
 class SaveButton extends StatelessWidget {
-  const SaveButton(
-      {super.key, required this.game, required this.nfcDataNotifier});
+  const SaveButton({
+    super.key,
+    required this.game,
+    required this.nfcDataNotifier,
+  });
 
   final NfcDataNotifier nfcDataNotifier;
   final TestGame game;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      Positioned(
+    return Stack(
+      children: [
+        Positioned(
           top: MediaQuery.of(context).padding.top,
           right: MediaQuery.of(context).size.width * 0.05,
           child: GestureDetector(
@@ -22,35 +26,40 @@ class SaveButton extends StatelessWidget {
               Completer stopNfcWriting = Completer();
               game.savePlayerDataOnNfc(stopNfcWriting: stopNfcWriting);
               showDialog(
-                  barrierDismissible: false,
-                  context: context,
-                  builder: (BuildContext context) => ListenableBuilder(
-                      listenable: nfcDataNotifier,
-                      builder: (context, _) {
-                        return AlertDialog(
-                          content: SizedBox(
-                              height: 64,
-                              child: Center(
-                                child: nfcDataNotifier.isProcessing
-                                    ? CircularProgressIndicator()
-                                    : Text('Sauvegarde terminée'),
-                              )),
-                          actions: <Widget>[
-                            nfcDataNotifier.isProcessing
-                                ? TextButton(
-                                    onPressed: () async {
-                                      Navigator.pop(context, 'Annuler');
-                                      stopNfcWriting.complete();
-                                    },
-                                    child: Text('Annuler'))
-                                : TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context, 'Terminer');
-                                    },
-                                    child: Text('Terminer'))
-                          ],
-                        );
-                      }));
+                barrierDismissible: false,
+                context: context,
+                builder: (BuildContext context) => ListenableBuilder(
+                  listenable: nfcDataNotifier,
+                  builder: (context, _) {
+                    return AlertDialog(
+                      content: SizedBox(
+                        height: 64,
+                        child: Center(
+                          child: nfcDataNotifier.isProcessing
+                              ? CircularProgressIndicator()
+                              : Text(nfcDataNotifier.nfcSaveMessage),
+                        ),
+                      ),
+                      actions: <Widget>[
+                        nfcDataNotifier.isProcessing
+                            ? TextButton(
+                                onPressed: () async {
+                                  Navigator.pop(context, 'Annuler');
+                                  stopNfcWriting.complete();
+                                },
+                                child: Text('Annuler'),
+                              )
+                            : TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context, 'Terminer');
+                                },
+                                child: Text('Terminer'),
+                              ),
+                      ],
+                    );
+                  },
+                ),
+              );
             },
             child: Container(
               height: 48,
@@ -60,13 +69,11 @@ class SaveButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange, width: 2),
               ),
-              child: Center(
-                  child: Icon(
-                Icons.save,
-                color: Colors.black,
-              )),
+              child: Center(child: Icon(Icons.save, color: Colors.black)),
             ),
-          ))
-    ]);
+          ),
+        ),
+      ],
+    );
   }
 }

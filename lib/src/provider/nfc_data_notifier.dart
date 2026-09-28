@@ -22,6 +22,7 @@ class NfcDataNotifier extends ChangeNotifier {
   bool isProcessing = false;
   bool shouldUpdate = false;
   Exception? error;
+  String nfcSaveMessage = '';
 
   Map<String, NfcData> get nfcTags => _nfcTags;
   NfcData get latestNfcData => _latestNfcData;
@@ -100,9 +101,10 @@ class NfcDataNotifier extends ChangeNotifier {
       if (ndef == null) throw ('Tag is not ndef');
       if (!ndef.isWritable) throw ('Tag is not writeable');
       await ndef.write(message: saveData);
-
+      nfcSaveMessage = 'SavedData :  \nslimeType : $nfcType, \nlevel : $level';
       stopNfcWriting.complete();
     } catch (e) {
+      nfcSaveMessage = e.toString();
       stopNfcWriting.complete();
     }
     isProcessing = false;
