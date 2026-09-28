@@ -12,7 +12,10 @@ class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
   FutureOr<void> onLoad() {
     sprite = Sprite(game.images.fromCache('key.png'));
     add(RectangleHitbox(
-        size: hitBoxSize, anchor: Anchor.center, position: Vector2.all(8)));
+        size: hitBoxSize,
+        anchor: Anchor.center,
+        position: Vector2.all(8),
+        collisionType: CollisionType.passive));
     return super.onLoad();
   }
 

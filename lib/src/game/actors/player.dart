@@ -16,10 +16,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     required this.slimeImage,
     this.joystick,
     required super.position,
-  }) : super(
-          size: Vector2.all(64),
-          anchor: Anchor.center,
-        );
+  }) : super(size: Vector2.all(64), anchor: Anchor.center);
 
   PlayerState playerState;
 
@@ -42,11 +39,16 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       PlayerState.topIdle: topIdle!,
       PlayerState.bottomIdle: bottomIdle!,
       PlayerState.leftIdle: leftIdle!,
-      PlayerState.rightIdle: rightIdle!
+      PlayerState.rightIdle: rightIdle!,
     };
     current = playerState;
-    add(CircleHitbox(
-        radius: hitBoxSize, anchor: Anchor.center, position: Vector2.all(32)));
+    add(
+      CircleHitbox(
+        radius: hitBoxSize,
+        anchor: Anchor.center,
+        position: Vector2.all(32),
+      ),
+    );
   }
 
   @override
@@ -56,19 +58,21 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     if (joystick != null) {
       if (joystick!.direction != JoystickDirection.idle) {
         if (joystick!.relativeDelta.x > 0) {
-          if (joystick!.relativeDelta.y > 0.4)
+          if (joystick!.relativeDelta.y > 0.4) {
             playerState = PlayerState.bottomIdle;
-          else if (joystick!.relativeDelta.y < -0.4)
+          } else if (joystick!.relativeDelta.y < -0.4) {
             playerState = PlayerState.topIdle;
-          else
+          } else {
             playerState = PlayerState.rightIdle;
+          }
         } else if (joystick!.relativeDelta.x < 0) {
-          if (joystick!.relativeDelta.y > 0.4)
+          if (joystick!.relativeDelta.y > 0.4) {
             playerState = PlayerState.bottomIdle;
-          else if (joystick!.relativeDelta.y < -0.4)
+          } else if (joystick!.relativeDelta.y < -0.4) {
             playerState = PlayerState.topIdle;
-          else
+          } else {
             playerState = PlayerState.leftIdle;
+          }
         }
         current = playerState;
         nextPosition += (joystick!.relativeDelta * moveSpeed * dt);
@@ -86,7 +90,8 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Wall || other is Ground || other is BoxItem) {
       if (intersectionPoints.length == 2) {
-        final mid = (intersectionPoints.elementAt(0) +
+        final mid =
+            (intersectionPoints.elementAt(0) +
                 intersectionPoints.elementAt(1)) /
             2;
         final collisionNormal = absoluteCenter - mid;
@@ -102,7 +107,9 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is KeyItem) {
       collectKey(other);
     }
@@ -116,36 +123,44 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   void loadAnimations() {
     final double frameSize = 64;
     bottomIdle = SpriteAnimation.fromFrameData(
-        game.images.fromCache(slimeImage),
-        SpriteAnimationData.sequenced(
-            loop: true,
-            amount: 6,
-            stepTime: 0.1,
-            texturePosition: Vector2(0, 0 * frameSize),
-            textureSize: Vector2.all(64)));
+      game.images.fromCache(slimeImage),
+      SpriteAnimationData.sequenced(
+        loop: true,
+        amount: 6,
+        stepTime: 0.1,
+        texturePosition: Vector2(0, 0 * frameSize),
+        textureSize: Vector2.all(64),
+      ),
+    );
     topIdle = SpriteAnimation.fromFrameData(
-        game.images.fromCache(slimeImage),
-        SpriteAnimationData.sequenced(
-            loop: true,
-            amount: 6,
-            stepTime: 0.1,
-            texturePosition: Vector2(0, 1 * frameSize),
-            textureSize: Vector2.all(64)));
+      game.images.fromCache(slimeImage),
+      SpriteAnimationData.sequenced(
+        loop: true,
+        amount: 6,
+        stepTime: 0.1,
+        texturePosition: Vector2(0, 1 * frameSize),
+        textureSize: Vector2.all(64),
+      ),
+    );
     leftIdle = SpriteAnimation.fromFrameData(
-        game.images.fromCache(slimeImage),
-        SpriteAnimationData.sequenced(
-            loop: true,
-            amount: 6,
-            stepTime: 0.1,
-            texturePosition: Vector2(0, 2 * frameSize),
-            textureSize: Vector2.all(64)));
+      game.images.fromCache(slimeImage),
+      SpriteAnimationData.sequenced(
+        loop: true,
+        amount: 6,
+        stepTime: 0.1,
+        texturePosition: Vector2(0, 2 * frameSize),
+        textureSize: Vector2.all(64),
+      ),
+    );
     rightIdle = SpriteAnimation.fromFrameData(
-        game.images.fromCache(slimeImage),
-        SpriteAnimationData.sequenced(
-            loop: true,
-            amount: 6,
-            stepTime: 0.1,
-            texturePosition: Vector2(0, 3 * frameSize),
-            textureSize: Vector2.all(64)));
+      game.images.fromCache(slimeImage),
+      SpriteAnimationData.sequenced(
+        loop: true,
+        amount: 6,
+        stepTime: 0.1,
+        texturePosition: Vector2(0, 3 * frameSize),
+        textureSize: Vector2.all(64),
+      ),
+    );
   }
 }

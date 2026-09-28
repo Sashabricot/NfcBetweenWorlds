@@ -4,14 +4,14 @@ import 'dart:typed_data';
 import 'package:nfc_manager/ndef_record.dart';
 
 class NfcData {
-  NfcData(
-      {required this.ndefMessage,
-      required this.uid,
-      this.characterName,
-      this.characterItems,
-      this.slimeType}) {
-    print('calling constr');
-    characterName = '';
+  NfcData({
+    required this.ndefMessage,
+    required this.uid,
+    this.characterPosition,
+    this.characterItems,
+    this.slimeType,
+  }) {
+    characterPosition = '';
     characterItems = [];
 
     if (ndefMessage != null) {
@@ -22,26 +22,21 @@ class NfcData {
 
           switch (typeNameFormatString) {
             case 'U':
-              characterName = utf8.decode(record.payload);
-              print('character name :  $characterName');
+              characterPosition = utf8.decode(record.payload);
             case 'g:i':
               characterItems!.add(record);
-              print('item : ${utf8.decode(record.payload)}');
             case 's:t':
               slimeType = record.payload;
           }
-
-          print(
-            '${utf8.decode(record.payload)} ${utf8.decode(record.type)} ${record.typeNameFormat}',
-          );
         }
       }
     }
   }
+
   Uint8List? slimeType;
   final NdefMessage? ndefMessage;
   final String uid;
-  String? characterName;
+  String? characterPosition;
   List<NdefRecord>? characterItems;
 
   String _getType(NdefRecord record) {

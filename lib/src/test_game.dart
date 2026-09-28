@@ -11,10 +11,18 @@ import 'package:nfc_between_worlds/src/game/objects/key.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
-class TestGame extends FlameGame with HasCollisionDetection {
-  TestGame();
-
+class TestGame extends FlameGame
+    with HasCollisionDetection, WidgetsBindingObserver {
+  TestGame({
+    required this.nfcDataNotifier,
+    this.characterPosition,
+    this.slimeType,
+  });
+  String? slimeType;
+  Vector2? characterPosition;
+  final NfcDataNotifier nfcDataNotifier;
   String walkingType = '';
+  String slimeImage = '';
 
   late Player _player;
   late JoystickComponent _joystick;
@@ -34,13 +42,10 @@ class TestGame extends FlameGame with HasCollisionDetection {
     return const Color.fromARGB(255, 173, 223, 247);
   }
 
-  NfcDataNotifier nfcDataNotifier = NfcDataNotifier();
-
   @override
   FutureOr<void> onLoad() async {
+    WidgetsBinding.instance.addObserver(this);
     nfcDataNotifier.addListener(_updateWorldType);
-    nfcDataNotifier.startNfcCardTypeScan();
-
     await images.loadAll([
       'Slime1_Idle_body.png',
       'Slime2_Idle_body.png',
@@ -49,6 +54,7 @@ class TestGame extends FlameGame with HasCollisionDetection {
       'key.png',
       'box.png',
     ]);
+    slimeType ??= 'Land';
 
     final sheet = SpriteSheet.fromColumnsAndRows(
       image: images.fromCache('joystick.png'),
@@ -73,36 +79,50 @@ class TestGame extends FlameGame with HasCollisionDetection {
       Vector2.all(32),
     );
 
-    final spawnPoint =
-        firstMap.tileMap.getLayer<ObjectGroup>('SpawnPoint')!.objects.first;
+    final spawnPoint = firstMap.tileMap
+        .getLayer<ObjectGroup>('SpawnPoint')!
+        .objects
+        .first;
     final wallObjects = firstMap.tileMap.getLayer<ObjectGroup>('Wall');
-
+    bool isBlocked = false;
     waterObjects = firstMap.tileMap.getLayer<ObjectGroup>('WaterZone');
     landObjects = firstMap.tileMap.getLayer<ObjectGroup>('LandZone');
     lavaObjects = firstMap.tileMap.getLayer<ObjectGroup>('LavaZone');
     doorObjects = firstMap.tileMap.getLayer<ObjectGroup>('Door');
 
+    loadWalkingType();
+    if (characterPosition != null) {
+      isBlocked = isPlayerInBlockedZone(characterPosition!);
+    } else {
+      characterPosition = Vector2(spawnPoint.x, spawnPoint.y);
+    }
+
     _player = Player(
-        playerState: PlayerState.bottomIdle,
-        isBlocked: false,
-        position: Vector2(spawnPoint.x, spawnPoint.y),
-        joystick: _joystick,
-        slimeImage: 'Slime1_Idle_body.png');
+      playerState: PlayerState.bottomIdle,
+      isBlocked: isBlocked,
+      position: characterPosition,
+      joystick: _joystick,
+      slimeImage: slimeImage,
+    );
 
     world.add(firstMap);
 
     for (var wall in wallObjects!.objects) {
-      wallsList.add(Wall()
-        ..position = Vector2(wall.x, wall.y)
-        ..width = wall.width
-        ..height = wall.height
-        ..debugColor = Color.fromARGB(1, 231, 2, 193));
+      wallsList.add(
+        Wall()
+          ..position = Vector2(wall.x, wall.y)
+          ..width = wall.width
+          ..height = wall.height
+          ..debugColor = Color.fromARGB(1, 231, 2, 193),
+      );
       world.add(wallsList.last);
     }
-    
+
     door = Wall()
-      ..position =
-          Vector2(doorObjects!.objects.first.x, doorObjects!.objects.first.y)
+      ..position = Vector2(
+        doorObjects!.objects.first.x,
+        doorObjects!.objects.first.y,
+      )
       ..width = doorObjects!.objects.first.width
       ..height = doorObjects!.objects.first.height
       ..debugMode = true;
@@ -110,29 +130,48 @@ class TestGame extends FlameGame with HasCollisionDetection {
     _key = KeyItem(position: Vector2(spawnPoint.x + 64, spawnPoint.y))
       ..debugMode = true;
 
-    addBlockedZone(waterObjects);
     world.add(_key);
     world.add(_player);
     world.add(door);
     camera.follow(_player, snap: true);
     camera.viewport.add(_joystick);
+
+    nfcDataNotifier.startNfcCardTypeScan();
+
     return super.onLoad();
   }
 
   void _updateWorldType() {
-    for (PositionComponent zone in blockedZone) {
-      world.remove(zone);
+    if (nfcDataNotifier.shouldUpdate) {
+      for (PositionComponent zone in blockedZone) {
+        world.remove(zone);
+      }
+
+      final playerState = _player.playerState;
+      final position = _player.position;
+
+      blockedZone = [];
+      slimeType = nfcDataNotifier.nfcType;
+
+      world.remove(_player);
+      loadWalkingType();
+
+      bool isBlocked = isPlayerInBlockedZone(position);
+      _player = Player(
+        playerState: playerState,
+        position: position,
+        joystick: _joystick,
+        slimeImage: slimeImage,
+        isBlocked: isBlocked,
+      );
+
+      world.add(_player);
+      camera.follow(_player, snap: true);
     }
-    String slimeImage = '';
-    final playerState = _player.playerState;
-    final position = _player.position;
+  }
 
-    blockedZone = [];
-
-    walkingType = nfcDataNotifier.nfcType;
-
-    world.remove(_player);
-    switch (walkingType) {
+  void loadWalkingType() {
+    switch (slimeType) {
       case 'Land':
         addBlockedZone(waterObjects);
         addBlockedZone(lavaObjects);
@@ -146,34 +185,24 @@ class TestGame extends FlameGame with HasCollisionDetection {
         addBlockedZone(landObjects);
         slimeImage = 'Slime3_Idle_body.png';
     }
-
-    bool isBlocked = isPlayerInBlockedZone(position);
-    _player = Player(
-      playerState: playerState,
-      position: position,
-      joystick: _joystick,
-      slimeImage: slimeImage,
-      isBlocked: isBlocked,
-    );
-
-    world.add(_player);
-    camera.follow(_player, snap: true);
   }
 
   void addBlockedZone(ObjectGroup? zoneObjects) {
     if (zoneObjects != null) {
       for (var zone in zoneObjects.objects) {
-        blockedZone.add(Ground()
-          ..position = Vector2(zone.x, zone.y)
-          ..width = zone.width
-          ..height = zone.height
-          ..debugColor = Color.fromARGB(1, 88, 148, 9));
+        blockedZone.add(
+          Ground()
+            ..position = Vector2(zone.x, zone.y)
+            ..width = zone.width
+            ..height = zone.height
+            ..debugColor = Color.fromARGB(1, 88, 148, 9),
+        );
         world.add(blockedZone.last);
       }
     }
   }
 
-  bool isPlayerInBlockedZone(position) {
+  bool isPlayerInBlockedZone(Vector2 position) {
     return blockedZone.any((zone) => zone.containsPoint(position));
   }
 
@@ -185,5 +214,29 @@ class TestGame extends FlameGame with HasCollisionDetection {
 
   void collectKey() {
     world.remove(door);
+  }
+
+  Future<void> savePlayerDataOnNfc({required Completer stopNfcWriting}) async {
+    await nfcDataNotifier.savePlayerDataOnNfc(
+      position: _player.position,
+      stopNfcWriting: stopNfcWriting,
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      pauseEngine();
+    } else if (state == AppLifecycleState.resumed) {
+      resumeEngine();
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 }
