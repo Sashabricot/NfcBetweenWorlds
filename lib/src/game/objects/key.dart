@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
+import 'package:flutter/widgets.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
 class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
@@ -11,11 +13,26 @@ class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
   @override
   FutureOr<void> onLoad() {
     sprite = Sprite(game.images.fromCache('key.png'));
-    add(RectangleHitbox(
+    add(
+      RectangleHitbox(
         size: hitBoxSize,
         anchor: Anchor.center,
         position: Vector2.all(8),
-        collisionType: CollisionType.passive));
+        collisionType: CollisionType.passive,
+      ),
+    );
+    add(
+      MoveByEffect(
+        Vector2(0, 10),
+        EffectController(
+          duration: 2,
+          infinite: true,
+          alternate: true,
+          curve: Curves.ease,
+          
+        ),
+      ),
+    );
     return super.onLoad();
   }
 

@@ -3,6 +3,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
 import 'package:nfc_between_worlds/src/game/objects/box.dart';
+import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
 import 'package:nfc_between_worlds/src/game/objects/key.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
@@ -88,7 +89,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
 
   @override
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
-    if (other is Wall || other is Ground || other is BoxItem) {
+    if (other is Wall || other is Ground || other is BoxItem || other is Door) {
       if (intersectionPoints.length == 2) {
         final mid =
             (intersectionPoints.elementAt(0) +

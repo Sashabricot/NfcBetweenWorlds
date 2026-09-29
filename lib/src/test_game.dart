@@ -3,10 +3,13 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
+import 'package:flame_tiled_utils/flame_tiled_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
+import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
+import 'package:nfc_between_worlds/src/game/objects/key.dart';
 import 'package:nfc_between_worlds/src/game/objects/teleporter.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
@@ -18,6 +21,7 @@ class TestGame extends FlameGame
     this.characterPosition,
     this.slimeType,
     this.level,
+    this.characterItems,
   });
   String? slimeType;
   Vector2? characterPosition;
@@ -25,10 +29,13 @@ class TestGame extends FlameGame
   final NfcDataNotifier nfcDataNotifier;
   String walkingType = '';
   String slimeImage = '';
+  List<String> collectedItems = [];
+  String worldKey = '';
+  List<String>? characterItems;
 
   late Player _player;
   late JoystickComponent _joystick;
-  // late KeyItem _key;
+  late KeyItem _key;
 
   List<PositionComponent> wallsList = [];
   List<PositionComponent> blockedZone = [];
@@ -41,6 +48,16 @@ class TestGame extends FlameGame
   ObjectGroup? doorObjects;
   ObjectGroup? teleportationObjetcs;
   ObjectGroup? firstMapTeleporter;
+  ObjectGroup? keyItems;
+
+  PositionComponent? landLayer;
+  PositionComponent? lavaLayer;
+  PositionComponent? waterLayer;
+  PositionComponent? bordersLayer;
+  PositionComponent? bridgesLayer;
+  PositionComponent? decorationLayer;
+
+  late TiledComponent levelMap;
 
   @override
   Color backgroundColor() {
@@ -49,6 +66,9 @@ class TestGame extends FlameGame
 
   @override
   FutureOr<void> onLoad() async {
+    if (characterItems != null && characterItems!.isNotEmpty) {
+      collectedItems.addAll(characterItems!);
+    }
     WidgetsBinding.instance.addObserver(this);
     nfcDataNotifier.addListener(_updateWorldType);
     await images.loadAll([
@@ -58,6 +78,7 @@ class TestGame extends FlameGame
       'joystick.png',
       'key.png',
       'box.png',
+      'DoubleDoor1.png',
     ]);
     _loadJoystick();
     level ??= 'first_map.tmx';
@@ -69,7 +90,11 @@ class TestGame extends FlameGame
   }
 
   Future<void> _loadLevel(String level) async {
-    final levelMap = await TiledComponent.load(level, Vector2.all(32));
+    switch (level) {
+      case 'first_map.tmx':
+        worldKey = 'key1';
+    }
+    levelMap = await TiledComponent.load(level, Vector2.all(32));
 
     final spawnPoint = levelMap.tileMap
         .getLayer<ObjectGroup>('SpawnPoint')!
@@ -87,6 +112,7 @@ class TestGame extends FlameGame
     firstMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
       'FirstMapTeleporter',
     );
+    keyItems = levelMap.tileMap.getLayer<ObjectGroup>('Key');
 
     slimeType ??= 'Land';
 
@@ -107,7 +133,6 @@ class TestGame extends FlameGame
       slimeImage: slimeImage,
     );
 
-    world.add(levelMap);
     if (wallObjects != null) {
       for (var wall in wallObjects.objects) {
         wallsList.add(
@@ -115,31 +140,118 @@ class TestGame extends FlameGame
             ..position = Vector2(wall.x, wall.y)
             ..width = wall.width
             ..height = wall.height
-            ..debugColor = Color.fromARGB(1, 231, 2, 193),
+            ..debugColor = Color.fromRGBO(231, 2, 193, 0.004),
         );
         world.add(wallsList.last);
       }
     }
+    if (doorObjects != null) {
+      door = Door(keyItemString: worldKey)
+        ..position = Vector2(
+          doorObjects!.objects.first.x,
+          doorObjects!.objects.first.y,
+        );
+
+      door.priority = 3;
+      world.add(door);
+    }
+    if (!collectedItems.contains(worldKey) && keyItems != null) {
+      _key = KeyItem(
+        position: Vector2(keyItems!.objects.first.x, keyItems!.objects.first.y),
+      );
+      _key.priority = 2;
+      world.add(_key);
+    }
+
     _loadTeleporter();
+
+    _loadLayers(levelMap);
+  }
+
+  void _loadLayers(TiledComponent levelMap) {
+    final imageCompiler = ImageBatchCompiler();
+
+    waterLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['water'],
+    );
+    lavaLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['lava'],
+    );
+    landLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['land'],
+    );
+    decorationLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['decoration'],
+    );
+    bridgesLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['bridges'],
+    );
+    bordersLayer = imageCompiler.compileMapLayer(
+      tileMap: levelMap.tileMap,
+      layerNames: ['borders'],
+    );
+
+    if (waterLayer != null) {
+      waterLayer!.priority = 1;
+      world.add(waterLayer!);
+    }
+    if (lavaLayer != null) {
+      lavaLayer!.priority = 1;
+      world.add(lavaLayer!);
+    }
+    if (landLayer != null) {
+      landLayer!.priority = 1;
+      world.add(landLayer!);
+    }
+    if (decorationLayer != null) {
+      decorationLayer!.priority = 3;
+      world.add(decorationLayer!);
+    }
+    if (bridgesLayer != null) {
+      if (slimeType == 'Water') {
+        bridgesLayer!.priority = 3;
+        world.add(bridgesLayer!);
+      } else {
+        bridgesLayer!.priority = 1;
+        world.add(bridgesLayer!);
+      }
+    }
+    if (bordersLayer != null) {
+      bordersLayer!.priority = 1;
+      world.add(bordersLayer!);
+    }
+
+    _player.priority = 2;
 
     world.add(_player);
     camera.follow(_player, snap: true);
     camera.viewport.add(_joystick);
-    // door = Wall()
-    //   ..position = Vector2(
-    //     doorObjects!.objects.first.x,
-    //     doorObjects!.objects.first.y,
-    //   )
-    //   ..width = doorObjects!.objects.first.width
-    //   ..height = doorObjects!.objects.first.height
-    //   ..debugMode = true;
+  }
 
-    // _key = KeyItem(position: Vector2(spawnPoint.x + 64, spawnPoint.y))
-    //   ..debugMode = true;
-
-    // world.add(_key);
-
-    // world.add(door);
+  void _removeLayers() {
+    if (waterLayer != null) {
+      world.remove(waterLayer!);
+    }
+    if (lavaLayer != null) {
+      world.remove(lavaLayer!);
+    }
+    if (landLayer != null) {
+      world.remove(landLayer!);
+    }
+    if (decorationLayer != null) {
+      world.remove(decorationLayer!);
+    }
+    if (bridgesLayer != null) {
+      world.remove(bridgesLayer!);
+    }
+    if (bordersLayer != null) {
+      world.remove(bordersLayer!);
+    }
   }
 
   void _loadTeleporter() {
@@ -264,7 +376,6 @@ class TestGame extends FlameGame
 
       blockedZone = [];
       slimeType = nfcDataNotifier.nfcType;
-
       world.remove(_player);
       _loadWalkingType();
 
@@ -277,8 +388,16 @@ class TestGame extends FlameGame
         isBlocked: isBlocked,
       );
 
-      world.add(_player);
+      _removeLayers();
+      _loadLayers(levelMap);
+
       camera.follow(_player, snap: true);
+    } else if (nfcDataNotifier.shouldTeleportToSlimeHub) {
+      if (collectedItems.contains('key1')) {
+        changeLevel('teleportation_map.tmx');
+      } else {
+        print('should have first key');
+      }
     }
   }
 
@@ -287,11 +406,25 @@ class TestGame extends FlameGame
       position: _player.position,
       level: level!,
       stopNfcWriting: stopNfcWriting,
+      collectedItems: collectedItems,
     );
   }
 
   void collectKey() {
     world.remove(door);
+    collectedItems.add(worldKey);
+
+    door = Door(keyItemString: worldKey);
+    if (doorObjects != null) {
+      door = Door(keyItemString: worldKey)
+        ..position = Vector2(
+          doorObjects!.objects.first.x,
+          doorObjects!.objects.first.y,
+        )
+        ..debugMode = true;
+      door.priority = 2;
+      world.add(door);
+    }
   }
 
   @override

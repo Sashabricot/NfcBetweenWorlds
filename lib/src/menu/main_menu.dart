@@ -11,7 +11,7 @@ class MainMenu extends StatelessWidget {
   final NfcDataNotifier nfcDataNotifier;
   @override
   Widget build(BuildContext context) {
-    void loadGame(Map<String, dynamic>? characterSaveData) {
+    Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
       if (nfcDataNotifier.error == null && characterSaveData != null) {
         Navigator.pushReplacement(
           context,
@@ -23,6 +23,7 @@ class MainMenu extends StatelessWidget {
                   characterPosition: characterSaveData['characterPosition'],
                   slimeType: characterSaveData['nfcType'],
                   level: characterSaveData['level'],
+                  characterItems: characterSaveData['items'],
                 );
               },
               overlayBuilderMap: {
@@ -39,128 +40,139 @@ class MainMenu extends StatelessWidget {
       }
     }
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        alignment: AlignmentGeometry.center,
-        children: [
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.25,
-            child: Text(
-              'NFC Between Worlds',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 24,
-                fontWeight: .bold,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          alignment: AlignmentGeometry.center,
+          children: [
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.25,
+              child: Text(
+                'NFC Between Worlds',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 24,
+                  fontWeight: .bold,
+                ),
               ),
             ),
-          ),
 
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.65,
-            child: Center(
-              child: Column(
-                crossAxisAlignment: .center,
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      Completer stopNfcSaveReading = Completer();
-                      nfcDataNotifier
-                          .loadNfcSave(
-                            context: context,
-                            startNewGame: false,
-                            stopNfcSaveReading: stopNfcSaveReading,
-                            nfcDataNotifier: nfcDataNotifier,
-                          )
-                          .then(
-                            (characterSaveData) => loadGame(characterSaveData),
-                          );
-                      showDialog(
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (BuildContext context) => ListenableBuilder(
-                          listenable: nfcDataNotifier,
-                          builder: (context, _) {
-                            return AlertDialog(
-                              content: SizedBox(
-                                height: 64,
-                                child: Center(
-                                  child: nfcDataNotifier.error == null
-                                      ? CircularProgressIndicator()
-                                      : Text(nfcDataNotifier.error.toString()),
-                                ),
-                              ),
-                              actions: <Widget>[
-                                nfcDataNotifier.error == null
-                                    ? TextButton(
-                                        onPressed: () async {
-                                          Navigator.pop(context, 'Annuler');
-
-                                          stopNfcSaveReading.complete();
-                                        },
-                                        child: Text('Annuler'),
-                                      )
-                                    : TextButton(
-                                        onPressed: () async {
-                                          Navigator.pop(context, 'Confirmer');
-                                        },
-                                        child: Text('Confirmer'),
-                                      ),
-                              ],
+            Positioned(
+              top: MediaQuery.of(context).size.height * 0.65,
+              child: Center(
+                child: Column(
+                  crossAxisAlignment: .center,
+                  children: [
+                    TextButton(
+                      onPressed: () async {
+                        Completer stopNfcSaveReading = Completer();
+                        nfcDataNotifier
+                            .loadNfcSave(
+                              context: context,
+                              startNewGame: false,
+                              stopNfcSaveReading: stopNfcSaveReading,
+                              nfcDataNotifier: nfcDataNotifier,
+                            )
+                            .then(
+                              (characterSaveData) =>
+                                  loadGame(characterSaveData),
                             );
-                          },
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (BuildContext context) => ListenableBuilder(
+                            listenable: nfcDataNotifier,
+                            builder: (context, _) {
+                              return PopScope(
+                                canPop: false,
+                                child: AlertDialog(
+                                  content: SizedBox(
+                                    height: 64,
+                                    child: Center(
+                                      child: nfcDataNotifier.error == null
+                                          ? CircularProgressIndicator()
+                                          : Text(
+                                              nfcDataNotifier.error.toString(),
+                                            ),
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    nfcDataNotifier.error == null
+                                        ? TextButton(
+                                            onPressed: () async {
+                                              Navigator.pop(context, 'Annuler');
+                                              stopNfcSaveReading.complete();
+                                            },
+                                            child: Text('Annuler'),
+                                          )
+                                        : TextButton(
+                                            onPressed: () async {
+                                              Navigator.pop(
+                                                context,
+                                                'Confirmer',
+                                              );
+                                            },
+                                            child: Text('Confirmer'),
+                                          ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.black,
                         ),
-                      );
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(),
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.black,
-                      ),
 
-                      width: 256,
-                      height: 44,
-                      child: Center(
-                        child: Text(
-                          'Jouer',
-                          style: TextStyle(color: Colors.white),
+                        width: 256,
+                        height: 44,
+                        child: Center(
+                          child: Text(
+                            'Jouer',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  // TextButton(
-                  //   onPressed: () {
-                  //     Completer stopNfcSaveReading = Completer();
-                  //     nfcDataNotifier.loadNfcSave(
-                  //       context: context,
-                  //       startNewGame: true,
-                  //       stopNfcSaveReading: stopNfcSaveReading,
-                  //       nfcDataNotifier: nfcDataNotifier,
-                  //     );
-                  //   },
-                  //   child: Container(
-                  //     decoration: BoxDecoration(
-                  //       border: Border.all(),
-                  //       borderRadius: BorderRadius.circular(8),
-                  //       color: Colors.black,
-                  //     ),
+                    // TextButton(
+                    //   onPressed: () {
+                    //     Completer stopNfcSaveReading = Completer();
+                    //     nfcDataNotifier.loadNfcSave(
+                    //       context: context,
+                    //       startNewGame: true,
+                    //       stopNfcSaveReading: stopNfcSaveReading,
+                    //       nfcDataNotifier: nfcDataNotifier,
+                    //     );
+                    //   },
+                    //   child: Container(
+                    //     decoration: BoxDecoration(
+                    //       border: Border.all(),
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       color: Colors.black,
+                    //     ),
 
-                  //     width: 256,
-                  //     height: 44,
-                  //     child: Center(
-                  //       child: Text(
-                  //         'Nouvelle Partie',
-                  //         style: TextStyle(color: Colors.white),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                ],
+                    //     width: 256,
+                    //     height: 44,
+                    //     child: Center(
+                    //       child: Text(
+                    //         'Nouvelle Partie',
+                    //         style: TextStyle(color: Colors.white),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

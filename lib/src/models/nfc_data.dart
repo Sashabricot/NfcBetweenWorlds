@@ -8,7 +8,6 @@ class NfcData {
     required this.ndefMessage,
     required this.uid,
     this.characterPosition,
-    this.characterItems,
     this.slimeType,
     this.characterLevel,
   }) {
@@ -25,22 +24,29 @@ class NfcData {
             case 'U':
               characterPosition = utf8.decode(record.payload);
             case 'g:i':
-              characterItems!.add(record);
+              switch (utf8.decode(record.payload)) {
+                case '0':
+                  characterItems.add('key1');
+              }
+
             case 'g:l':
               characterLevel = utf8.decode(record.payload);
             case 's:t':
               slimeType = record.payload;
+            case 's:h':
+              
+              shouldTeleportToSlimeHub = true;
           }
         }
       }
     }
   }
-
+  bool? shouldTeleportToSlimeHub;
   Uint8List? slimeType;
   final NdefMessage? ndefMessage;
   final String uid;
   String? characterPosition;
-  List<NdefRecord>? characterItems;
+  List<String> characterItems = [];
   String? characterLevel;
 
   String _getType(NdefRecord record) {

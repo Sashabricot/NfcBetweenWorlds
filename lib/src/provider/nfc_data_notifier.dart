@@ -21,6 +21,7 @@ class NfcDataNotifier extends ChangeNotifier {
   );
   bool isProcessing = false;
   bool shouldUpdate = false;
+  bool shouldTeleportToSlimeHub = false;
   Exception? error;
   String nfcSaveMessage = '';
 
@@ -48,6 +49,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required Vector2 position,
     required Completer stopNfcWriting,
     required String level,
+    required List<String> collectedItems,
   }) async {
     shouldUpdate = false;
     isProcessing = true;
@@ -60,6 +62,7 @@ class NfcDataNotifier extends ChangeNotifier {
         position: position,
         stopNfcWriting: stopNfcWriting,
         level: level,
+        collectedItems: collectedItems,
       ),
     );
     await stopNfcWriting.future;
@@ -72,9 +75,11 @@ class NfcDataNotifier extends ChangeNotifier {
     required Vector2 position,
     required Completer stopNfcWriting,
     required String level,
+    required List<String> collectedItems,
   }) async {
     try {
       final String positionString = '${position.x},${position.y}';
+
       final NdefMessage saveData = NdefMessage(
         records: [
           NdefRecord(
@@ -97,6 +102,24 @@ class NfcDataNotifier extends ChangeNotifier {
           ),
         ],
       );
+      for (String item in collectedItems) {
+        Uint8List? itemUtf8;
+        switch (item) {
+          case 'key1':
+            itemUtf8 = utf8.encode('0');
+        }
+        if (itemUtf8 != null) {
+          saveData.records.add(
+            NdefRecord(
+              typeNameFormat: .external,
+              type: utf8.encode('g:i'),
+              identifier: Uint8List.fromList([]),
+              payload: itemUtf8,
+            ),
+          );
+        }
+      }
+
       final ndef = Ndef.from(nfc);
       if (ndef == null) throw ('Tag is not ndef');
       if (!ndef.isWritable) throw ('Tag is not writeable');
@@ -143,33 +166,39 @@ class NfcDataNotifier extends ChangeNotifier {
       }
 
       if (_nfcTags[nfcUid] == null) {
-        NfcData newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
+        newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
 
         _nfcTags[nfcUid] = newNfc;
       } else {
         newNfc = _nfcTags[nfcUid]!;
-
-        if (_latestNfcData.uid != newNfc.uid) {
-          if (newNfc.slimeType != null) {
-            switch (newNfc.slimeType) {
-              case [50]:
-                _nfcUtf8Type = newNfc.slimeType!;
-                _nfcType = 'Land';
-                notifyListeners();
-              case [49]:
-                _nfcUtf8Type = newNfc.slimeType!;
-                _nfcType = 'Water';
-                notifyListeners();
-              case [48]:
-                _nfcUtf8Type = newNfc.slimeType!;
-                _nfcType = 'Lava';
-                notifyListeners();
-              default:
-            }
+      }
+      if (_latestNfcData.uid != newNfc.uid) {
+        if (newNfc.slimeType != null) {
+          switch (newNfc.slimeType) {
+            case [50]:
+              _nfcUtf8Type = newNfc.slimeType!;
+              _nfcType = 'Land';
+              notifyListeners();
+            case [49]:
+              _nfcUtf8Type = newNfc.slimeType!;
+              _nfcType = 'Water';
+              notifyListeners();
+            case [48]:
+              _nfcUtf8Type = newNfc.slimeType!;
+              _nfcType = 'Lava';
+              notifyListeners();
+            default:
           }
         }
-        _latestNfcData = newNfc;
+      } else if (newNfc.shouldTeleportToSlimeHub != null &&
+          newNfc.shouldTeleportToSlimeHub!) {
+        shouldUpdate = false;
+        shouldTeleportToSlimeHub = true;
+        notifyListeners();
+        shouldUpdate = true;
+        shouldTeleportToSlimeHub = false;
       }
+      _latestNfcData = newNfc;
     } catch (e) {
       throw Exception(e);
     }
@@ -211,6 +240,8 @@ class NfcDataNotifier extends ChangeNotifier {
     Vector2? characterPosition;
     NfcData newNfc;
     String? level;
+    List<String>? characterItems;
+    List<String>? collectedItems;
     try {
       final Ndef? ndef = Ndef.from(nfc);
       final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
@@ -227,6 +258,7 @@ class NfcDataNotifier extends ChangeNotifier {
       newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
       _nfcTags[nfcUid] = newNfc;
       String? nfcSavedType;
+
       if (newNfc.slimeType != null) {
         switch (newNfc.slimeType) {
           case [50]:
@@ -252,11 +284,26 @@ class NfcDataNotifier extends ChangeNotifier {
       if (newNfc.characterLevel != null) {
         level = newNfc.characterLevel;
       }
+      if (newNfc.shouldTeleportToSlimeHub != null) {
+        throw Exception('Please use a new NFC card');
+      }
+      if (newNfc.characterItems.isNotEmpty) {
+        characterItems = newNfc.characterItems;
+        collectedItems = [];
+        for (String item in characterItems) {
+          switch (item) {
+            case '0':
+              collectedItems.add('key1');
+          }
+        }
+      }
       characterSaveData.addAll({
         'characterPosition': characterPosition,
         'nfcType': nfcSavedType,
         'level': level,
+        'items': characterItems,
       });
+
       stopNfcSaveReading.complete();
       return characterSaveData;
     } on Exception catch (e) {
