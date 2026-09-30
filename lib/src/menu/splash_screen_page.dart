@@ -14,7 +14,7 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
   final NfcDataNotifier nfcDataNotifier = NfcDataNotifier();
   @override
   Widget build(BuildContext context) {
-    nfcDataNotifier.blockSystemNfc();
+    
     return Scaffold(
       body: FlameSplashScreen(
         onFinish: (BuildContext context) {

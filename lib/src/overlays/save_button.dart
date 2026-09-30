@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:nfc_between_worlds/src/constants/styled_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
@@ -13,7 +14,6 @@ class SaveButton extends StatelessWidget {
 
   final NfcDataNotifier nfcDataNotifier;
   final TestGame game;
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -24,6 +24,7 @@ class SaveButton extends StatelessWidget {
           child: GestureDetector(
             onTap: () {
               Completer stopNfcWriting = Completer();
+              game.pauseEngine();
               game.savePlayerDataOnNfc(stopNfcWriting: stopNfcWriting);
               showDialog(
                 barrierDismissible: false,
@@ -31,31 +32,41 @@ class SaveButton extends StatelessWidget {
                 builder: (BuildContext context) => ListenableBuilder(
                   listenable: nfcDataNotifier,
                   builder: (context, _) {
-                    return AlertDialog(
-                      content: SizedBox(
-                        height: 64,
-                        child: Center(
-                          child: nfcDataNotifier.isProcessing
-                              ? CircularProgressIndicator()
-                              : Text(nfcDataNotifier.nfcSaveMessage),
+                    return PopScope(
+                      canPop: false,
+                      child: AlertDialog(
+                        content: SizedBox(
+                          height: 64,
+                          child: Center(
+                            child: nfcDataNotifier.isProcessing
+                                ? CircularProgressIndicator()
+                                : Text(nfcDataNotifier.nfcSaveMessage),
+                          ),
                         ),
+                        actions: <Widget>[
+                          nfcDataNotifier.isProcessing
+                              ? OutlinedButton(
+                                  style: StyledButton().overlayButtonStyle,
+                                  onPressed: () async {
+                                    Navigator.pop(context, 'Annuler');
+                                    stopNfcWriting.complete();
+                                    game.resumeEngine();
+                                  },
+                                  child: Text('Annuler'),
+                                )
+                              : OutlinedButton(
+                                  style: StyledButton().overlayButtonStyle,
+                                  onPressed: () {
+                                    Navigator.pop(context, 'Terminer');
+                                    game.resumeEngine();
+                                  },
+                                  child: Text(
+                                    'Terminer',
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                        ],
                       ),
-                      actions: <Widget>[
-                        nfcDataNotifier.isProcessing
-                            ? TextButton(
-                                onPressed: () async {
-                                  Navigator.pop(context, 'Annuler');
-                                  stopNfcWriting.complete();
-                                },
-                                child: Text('Annuler'),
-                              )
-                            : TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, 'Terminer');
-                                },
-                                child: Text('Terminer'),
-                              ),
-                      ],
                     );
                   },
                 ),

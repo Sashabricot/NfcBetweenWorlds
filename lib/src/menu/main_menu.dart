@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+
+import 'package:nfc_between_worlds/src/overlays/pause_button.dart';
 import 'package:nfc_between_worlds/src/overlays/save_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
@@ -9,31 +11,39 @@ import 'package:nfc_between_worlds/src/test_game.dart';
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key, required this.nfcDataNotifier});
   final NfcDataNotifier nfcDataNotifier;
+
   @override
   Widget build(BuildContext context) {
+    nfcDataNotifier.blockSystemNfc();
+
     Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
       if (nfcDataNotifier.error == null && characterSaveData != null) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => GameWidget<TestGame>.controlled(
-              gameFactory: () {
-                return TestGame(
-                  nfcDataNotifier: nfcDataNotifier,
-                  characterPosition: characterSaveData['characterPosition'],
-                  slimeType: characterSaveData['nfcType'],
-                  level: characterSaveData['level'],
-                  characterItems: characterSaveData['items'],
-                );
-              },
-              overlayBuilderMap: {
-                'SaveButton': (_, game) =>
-                    SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
-              },
-              loadingBuilder: (context) =>
-                  Center(child: CircularProgressIndicator()),
+            builder: (context) => PopScope(
+              canPop: false,
+              child: GameWidget<TestGame>.controlled(
+                gameFactory: () {
+                  return TestGame(
+                    nfcDataNotifier: nfcDataNotifier,
+                    characterPosition: characterSaveData['characterPosition'],
+                    slimeType: characterSaveData['nfcType'],
+                    level: characterSaveData['level'],
+                    characterItems: characterSaveData['items'],
+                  );
+                },
+                overlayBuilderMap: {
+                  'SaveButton': (_, game) =>
+                      SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
+                  'PauseButton': (_, game) =>
+                      PauseButton(game: game, nfcDataNotifier: nfcDataNotifier),
+                },
+                loadingBuilder: (context) =>
+                    Center(child: CircularProgressIndicator()),
 
-              initialActiveOverlays: const ['SaveButton'],
+                initialActiveOverlays: const ['SaveButton', 'PauseButton'],
+              ),
             ),
           ),
         );
@@ -129,7 +139,6 @@ class MainMenu extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           color: Colors.black,
                         ),
-
                         width: 256,
                         height: 44,
                         child: Center(

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:gamepads/gamepads.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
 import 'package:nfc_between_worlds/src/game/objects/box.dart';
 import 'package:nfc_between_worlds/src/game/objects/door.dart';
@@ -33,8 +34,22 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
   final double moveSpeed = 100;
   final Vector2 velocity = Vector2.zero();
 
+  Vector2 leftStickDirection = Vector2.zero();
+
   @override
   FutureOr<void> onLoad() {
+    Gamepads.normalizedEvents.listen((event) {
+      if (event.axis == GamepadAxis.leftStickX) {
+        leftStickDirection = Vector2(event.value, leftStickDirection.y);
+      }
+      if (event.axis == GamepadAxis.leftStickY) {
+        leftStickDirection = Vector2(leftStickDirection.x, -event.value);
+      }
+    });
+
+    Gamepads.onDisconnected.listen((event) {
+      leftStickDirection = Vector2.zero();
+    });
     loadAnimations();
     animations = {
       PlayerState.topIdle: topIdle!,
@@ -52,32 +67,49 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     );
   }
 
+  void updatePlayerDirection(Vector2 direction) {
+    if (direction.x > 0) {
+      if (direction.y > 0.4) {
+        playerState = PlayerState.bottomIdle;
+      } else if (direction.y < -0.4) {
+        playerState = PlayerState.topIdle;
+      } else {
+        playerState = PlayerState.rightIdle;
+      }
+    } else if (direction.x < 0) {
+      if (direction.y > 0.4) {
+        playerState = PlayerState.bottomIdle;
+      } else if (direction.y < -0.4) {
+        playerState = PlayerState.topIdle;
+      } else {
+        playerState = PlayerState.leftIdle;
+      }
+    }
+    current = playerState;
+  }
+
+  bool checkLeftStickDirection(Vector2 direction) {
+    if (direction.x > 0.1 || direction.x < -0.1) {
+      return true;
+    } else if (direction.y > 0.1 || direction.y < -0.1) {
+      return true;
+    }
+    return false;
+  }
+
   @override
   void update(double dt) {
     Vector2 nextPosition = position;
 
     if (joystick != null) {
       if (joystick!.direction != JoystickDirection.idle) {
-        if (joystick!.relativeDelta.x > 0) {
-          if (joystick!.relativeDelta.y > 0.4) {
-            playerState = PlayerState.bottomIdle;
-          } else if (joystick!.relativeDelta.y < -0.4) {
-            playerState = PlayerState.topIdle;
-          } else {
-            playerState = PlayerState.rightIdle;
-          }
-        } else if (joystick!.relativeDelta.x < 0) {
-          if (joystick!.relativeDelta.y > 0.4) {
-            playerState = PlayerState.bottomIdle;
-          } else if (joystick!.relativeDelta.y < -0.4) {
-            playerState = PlayerState.topIdle;
-          } else {
-            playerState = PlayerState.leftIdle;
-          }
-        }
-        current = playerState;
+        updatePlayerDirection(joystick!.relativeDelta);
         nextPosition += (joystick!.relativeDelta * moveSpeed * dt);
       }
+    }
+    if (checkLeftStickDirection(leftStickDirection)) {
+      updatePlayerDirection(leftStickDirection);
+      nextPosition += leftStickDirection * moveSpeed * dt;
     }
 
     if (!isBlocked) {

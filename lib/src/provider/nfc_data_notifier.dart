@@ -105,7 +105,7 @@ class NfcDataNotifier extends ChangeNotifier {
       for (String item in collectedItems) {
         Uint8List? itemUtf8;
         switch (item) {
-          case 'key1':
+          case 'BeginnerKey':
             itemUtf8 = utf8.encode('0');
         }
         if (itemUtf8 != null) {
@@ -293,7 +293,7 @@ class NfcDataNotifier extends ChangeNotifier {
         for (String item in characterItems) {
           switch (item) {
             case '0':
-              collectedItems.add('key1');
+              collectedItems.add('BeginnerKey');
           }
         }
       }

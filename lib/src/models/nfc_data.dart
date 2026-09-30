@@ -26,7 +26,7 @@ class NfcData {
             case 'g:i':
               switch (utf8.decode(record.payload)) {
                 case '0':
-                  characterItems.add('key1');
+                  characterItems.add('BeginnerKey');
               }
 
             case 'g:l':
@@ -34,7 +34,6 @@ class NfcData {
             case 's:t':
               slimeType = record.payload;
             case 's:h':
-              
               shouldTeleportToSlimeHub = true;
           }
         }

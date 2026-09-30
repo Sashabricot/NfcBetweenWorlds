@@ -5,14 +5,15 @@ import 'package:flame/components.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
 class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
-  Door({required String keyItemString}) : super(anchor: .bottomCenter);
+  Door({required this.keyItemString}) : super(anchor: .bottomCenter);
   final Vector2 doorSpriteSize = Vector2.all(64);
   final Vector2 doorSize = Vector2(64, 64);
   final Vector2 doorHitboxSize = Vector2(64, 8);
+  final String keyItemString;
   @override
   FutureOr<void> onLoad() {
     int amount = 1;
-    if (game.collectedItems.contains('key1')) {
+    if (game.collectedItems.contains(keyItemString)) {
       amount = 6;
     } else {
       add(
