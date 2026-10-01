@@ -10,19 +10,26 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
   final Vector2 doorSize = Vector2(64, 64);
   final Vector2 doorHitboxSize = Vector2(64, 8);
   final String keyItemString;
+  RectangleHitbox? hitBox;
   @override
   FutureOr<void> onLoad() {
+    hitBox = RectangleHitbox(
+      collisionType: CollisionType.passive,
+      size: doorHitboxSize,
+      position: Vector2(0, doorSize.y - doorHitboxSize.y),
+    );
+    add(hitBox!);
+    return super.onLoad();
+  }
+
+  @override
+  void onMount() {
+    remove(hitBox!);
     int amount = 1;
     if (game.collectedItems.contains(keyItemString)) {
       amount = 6;
     } else {
-      add(
-        RectangleHitbox(
-          collisionType: CollisionType.passive,
-          size: doorHitboxSize,
-          position: Vector2(0, doorSize.y - doorHitboxSize.y),
-        ),
-      );
+      add(hitBox!);
     }
     animation = SpriteAnimation.fromFrameData(
       game.images.fromCache('DoubleDoor1.png'),
@@ -34,7 +41,6 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
       ),
     );
     size = doorSize;
-
-    return super.onLoad();
+    super.onMount();
   }
 }

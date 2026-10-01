@@ -205,7 +205,6 @@ class NfcDataNotifier extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> loadNfcSave({
-    required BuildContext context,
     required bool startNewGame,
     required Completer stopNfcSaveReading,
     required NfcDataNotifier nfcDataNotifier,
@@ -219,7 +218,7 @@ class NfcDataNotifier extends ChangeNotifier {
         characterSaveData = await _loadNfcSaveData(
           nfc: nfc,
           stopNfcSaveReading: stopNfcSaveReading,
-          context: context,
+
           nfcDataNotifier: nfcDataNotifier,
         ),
       },
@@ -232,7 +231,7 @@ class NfcDataNotifier extends ChangeNotifier {
   Future<Map<String, dynamic>> _loadNfcSaveData({
     required NfcTag nfc,
     required Completer stopNfcSaveReading,
-    required BuildContext context,
+
     required NfcDataNotifier nfcDataNotifier,
   }) async {
     await blockSystemNfc();

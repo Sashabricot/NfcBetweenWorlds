@@ -80,7 +80,6 @@ class MainMenu extends StatelessWidget {
                         Completer stopNfcSaveReading = Completer();
                         nfcDataNotifier
                             .loadNfcSave(
-                              context: context,
                               startNewGame: false,
                               stopNfcSaveReading: stopNfcSaveReading,
                               nfcDataNotifier: nfcDataNotifier,

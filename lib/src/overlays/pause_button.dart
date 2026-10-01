@@ -28,51 +28,45 @@ class PauseButton extends StatelessWidget {
               showDialog(
                 barrierDismissible: false,
                 context: context,
-                builder: (BuildContext context) => ListenableBuilder(
-                  listenable: nfcDataNotifier,
-                  builder: (context, _) {
-                    return PopScope(
-                      canPop: false,
-                      child: AlertDialog(
-                        actionsAlignment: .spaceAround,
-                        content: SizedBox(
-                          height: 64,
-                          child: Center(child: Text('Jeu en pause')),
+                builder: (BuildContext context) => PopScope(
+                  canPop: false,
+                  child: AlertDialog(
+                    actionsAlignment: .spaceAround,
+                    content: SizedBox(
+                      height: 64,
+                      child: Center(child: Text('Jeu en pause')),
+                    ),
+                    actions: <Widget>[
+                      OutlinedButton(
+                        style: StyledButton().overlayButtonStyle,
+                        onPressed: () {
+                          Navigator.pop(context, 'Quitter');
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  MainMenu(nfcDataNotifier: nfcDataNotifier),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Quitter',
+                          style: TextStyle(color: Colors.black),
                         ),
-                        actions: <Widget>[
-                          OutlinedButton(
-                            style: StyledButton().overlayButtonStyle,
-                            onPressed: () {
-                              Navigator.pop(context, 'Quitter');
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MainMenu(
-                                    nfcDataNotifier: nfcDataNotifier,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: Text(
-                              'Quitter',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ),
-                          OutlinedButton(
-                            style: StyledButton().overlayButtonStyle,
-                            onPressed: () {
-                              game.resumeEngine();
-                              Navigator.pop(context, 'Reprendre');
-                            },
-                            child: Text(
-                              'Reprendre',
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ),
-                        ],
                       ),
-                    );
-                  },
+                      OutlinedButton(
+                        style: StyledButton().overlayButtonStyle,
+                        onPressed: () {
+                          game.resumeEngine();
+                          Navigator.pop(context, 'Reprendre');
+                        },
+                        child: Text(
+                          'Reprendre',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

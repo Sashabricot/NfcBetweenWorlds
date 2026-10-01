@@ -113,6 +113,8 @@ class TestGame extends FlameGame
     switch (level) {
       case 'first_map.tmx':
         worldKey = 'BeginnerKey';
+      case 'teleportation_map.tmx':
+        worldKey = 'BeginnerKey';
       case 'beginner_map.tmx':
         worldKey = 'IntermediateKey';
     }
