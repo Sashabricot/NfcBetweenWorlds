@@ -53,7 +53,7 @@ class TestGame extends FlameGame
   ObjectGroup? teleportationObjects;
   ObjectGroup? firstMapTeleporter;
   ObjectGroup? beginnerMapTeleporter;
-  ObjectGroup? keyItems;
+  ObjectGroup? keyItem;
   ObjectGroup? boxItems;
 
   PositionComponent? landLayer;
@@ -143,7 +143,7 @@ class TestGame extends FlameGame
       'BeginnerMapTeleporter',
     );
     boxItems = levelMap.tileMap.getLayer<ObjectGroup>('Box');
-    keyItems = levelMap.tileMap.getLayer<ObjectGroup>(worldKey);
+    keyItem = levelMap.tileMap.getLayer<ObjectGroup>(worldKey);
 
     slimeType ??= 'Land';
 
@@ -186,9 +186,9 @@ class TestGame extends FlameGame
       beginnerDoor.priority = 3;
       world.add(beginnerDoor);
     }
-    if (!collectedItems.contains(worldKey) && keyItems != null) {
+    if (!collectedItems.contains(worldKey) && keyItem != null) {
       _key = KeyItem(
-        position: Vector2(keyItems!.objects.first.x, keyItems!.objects.first.y),
+        position: Vector2(keyItem!.objects.first.x, keyItem!.objects.first.y),
       );
       _key.priority = 2;
       world.add(_key);
@@ -482,13 +482,21 @@ class TestGame extends FlameGame
   }
 
   @override
+  void onGameResize(Vector2 size) {
+    nfcDataNotifier.startNfcCardTypeScan();
+    super.onGameResize(size);
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       pauseEngine();
     } else if (state == AppLifecycleState.resumed) {
+      nfcDataNotifier.startNfcCardTypeScan();
       resumeEngine();
     }
+
     super.didChangeAppLifecycleState(state);
   }
 
