@@ -107,6 +107,10 @@ class NfcDataNotifier extends ChangeNotifier {
         switch (item) {
           case 'BeginnerKey':
             itemUtf8 = utf8.encode('0');
+          case 'IntermediateKey':
+            itemUtf8 = utf8.encode('1');
+          case 'AdvancedKey':
+            itemUtf8 = utf8.encode('2');
         }
         if (itemUtf8 != null) {
           saveData.records.add(
@@ -293,6 +297,10 @@ class NfcDataNotifier extends ChangeNotifier {
           switch (item) {
             case '0':
               collectedItems.add('BeginnerKey');
+            case '1':
+              collectedItems.add('IntermediateKey');
+            case '2':
+              collectedItems.add('AdvancedKey');
           }
         }
       }

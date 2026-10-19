@@ -7,7 +7,8 @@ import 'package:flutter/widgets.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
 class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
-  KeyItem({required super.position}) : super(size: Vector2.all(16));
+  KeyItem({required super.position})
+    : super(size: Vector2.all(16), anchor: .center);
   final Vector2 hitBoxSize = Vector2.all(16);
   bool _isCollected = false;
   @override
@@ -29,7 +30,6 @@ class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
           infinite: true,
           alternate: true,
           curve: Curves.ease,
-          
         ),
       ),
     );

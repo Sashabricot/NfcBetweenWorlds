@@ -27,6 +27,10 @@ class NfcData {
               switch (utf8.decode(record.payload)) {
                 case '0':
                   characterItems.add('BeginnerKey');
+                case '1':
+                  characterItems.add('IntermediateKey');
+                case '2':
+                  characterItems.add('AdvancedKey');
               }
 
             case 'g:l':

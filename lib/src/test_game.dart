@@ -9,6 +9,7 @@ import 'package:gamepads/gamepads.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
 import 'package:nfc_between_worlds/src/game/objects/box.dart';
+import 'package:nfc_between_worlds/src/game/objects/button.dart';
 import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
 import 'package:nfc_between_worlds/src/game/objects/key.dart';
@@ -34,27 +35,34 @@ class TestGame extends FlameGame
   List<String> collectedItems = [];
   String worldKey = '';
   List<String>? characterItems;
+  bool removeLavaWalls = false;
 
   late Player _player;
   late JoystickComponent _joystick;
   late KeyItem _key;
-  late BoxItem _box;
+  List<BoxItem> _boxes = [];
+  late List<Button> _buttons;
 
   List<PositionComponent> wallsList = [];
   List<PositionComponent> blockedZone = [];
   List<PositionComponent> teleporterZone = [];
-  late PositionComponent beginnerDoor;
+  List<Door> doors = [];
 
   ObjectGroup? waterObjects;
   ObjectGroup? landObjects;
   ObjectGroup? lavaObjects;
   ObjectGroup? groundObjects;
   ObjectGroup? beginnerDoorObjects;
+  ObjectGroup? intermediateDoorObjects;
+  ObjectGroup? advancedDoorObjects;
   ObjectGroup? teleportationObjects;
   ObjectGroup? firstMapTeleporter;
   ObjectGroup? beginnerMapTeleporter;
+  ObjectGroup? intermediateMapTeleporter;
+  ObjectGroup? advancedMapTeleporter;
   ObjectGroup? keyItem;
   ObjectGroup? boxItems;
+  ObjectGroup? lavaButtonObjects;
 
   PositionComponent? landLayer;
   PositionComponent? lavaLayer;
@@ -86,6 +94,7 @@ class TestGame extends FlameGame
       'key.png',
       'box.png',
       'DoubleDoor1.png',
+      'button.png',
     ]);
     _loadJoystick();
     final gamepads = await Gamepads.list();
@@ -113,10 +122,10 @@ class TestGame extends FlameGame
     switch (level) {
       case 'first_map.tmx':
         worldKey = 'BeginnerKey';
-      case 'teleportation_map.tmx':
-        worldKey = 'BeginnerKey';
       case 'beginner_map.tmx':
         worldKey = 'IntermediateKey';
+      case 'intermediate_map.tmx':
+        worldKey = 'AdvancedKey';
     }
     levelMap = await TiledComponent.load(level, Vector2.all(32));
 
@@ -134,14 +143,32 @@ class TestGame extends FlameGame
     beginnerDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>(
       'BeginnerDoor',
     );
-    teleportationObjects = levelMap.tileMap.getLayer<ObjectGroup>('Teleporter');
+    intermediateDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>(
+      'IntermediateDoor',
+    );
+    advancedDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>(
+      'AdvancedDoor',
+    );
+
     groundObjects = levelMap.tileMap.getLayer<ObjectGroup>('GroundZone');
+
     firstMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
       'FirstMapTeleporter',
     );
+
     beginnerMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
       'BeginnerMapTeleporter',
     );
+    intermediateMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
+      'IntermediateMapTeleporter',
+    );
+    advancedMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
+      'AdvancedMapTeleporter',
+    );
+    teleportationObjects = levelMap.tileMap.getLayer<ObjectGroup>('Teleporter');
+
+    lavaButtonObjects = levelMap.tileMap.getLayer<ObjectGroup>('LavaButton');
+
     boxItems = levelMap.tileMap.getLayer<ObjectGroup>('Box');
     keyItem = levelMap.tileMap.getLayer<ObjectGroup>(worldKey);
 
@@ -176,16 +203,8 @@ class TestGame extends FlameGame
         world.add(wallsList.last);
       }
     }
-    if (beginnerDoorObjects != null) {
-      beginnerDoor = Door(keyItemString: worldKey)
-        ..position = Vector2(
-          beginnerDoorObjects!.objects.first.x,
-          beginnerDoorObjects!.objects.first.y,
-        );
 
-      beginnerDoor.priority = 3;
-      world.add(beginnerDoor);
-    }
+    _loadDoors();
     if (!collectedItems.contains(worldKey) && keyItem != null) {
       _key = KeyItem(
         position: Vector2(keyItem!.objects.first.x, keyItem!.objects.first.y),
@@ -194,12 +213,42 @@ class TestGame extends FlameGame
       world.add(_key);
     }
     if (boxItems != null) {
-      _box = BoxItem(
-        position: Vector2(boxItems!.objects.first.x, boxItems!.objects.first.y),
-      )..debugMode = true;
+      for (var element in boxItems!.objects) {
+        _boxes.add(
+          BoxItem(position: Vector2(element.x, element.y))..priority = 3,
+        );
+      }
 
-      _box.priority = 3;
-      world.add(_box);
+      world.addAll(_boxes);
+    }
+
+    if (lavaButtonObjects != null) {
+      _buttons.add(
+        Button(
+            buttonPressedAction: () {
+              lavaLayer!.priority = 0;
+              world.removeAll(blockedZone);
+              blockedZone = [];
+              removeLavaWalls = true;
+              _loadWalkingType();
+            },
+            buttonNotPressedAction: () {
+              lavaLayer!.priority = 2;
+              world.removeAll(blockedZone);
+              blockedZone = [];
+              removeLavaWalls = false;
+              _loadWalkingType();
+            },
+            position: Vector2(
+              lavaButtonObjects!.objects.first.x,
+              lavaButtonObjects!.objects.first.y,
+            ),
+          )
+          ..debugMode = true
+          ..priority = 2,
+      );
+
+      world.add(_buttons.last);
     }
 
     _loadTeleporter();
@@ -244,7 +293,10 @@ class TestGame extends FlameGame
       world.add(waterLayer!);
     }
     if (lavaLayer != null) {
-      lavaLayer!.priority = 2;
+      if (removeLavaWalls == false) {
+        lavaLayer!.priority = 2;
+      }
+
       world.add(lavaLayer!);
     }
     if (landLayer != null) {
@@ -300,6 +352,45 @@ class TestGame extends FlameGame
     }
   }
 
+  void _loadDoors() {
+    if (beginnerDoorObjects != null) {
+      doors.add(
+        Door(keyItemString: 'BeginnerKey')
+          ..position = Vector2(
+            beginnerDoorObjects!.objects.first.x,
+            beginnerDoorObjects!.objects.first.y,
+          ),
+      );
+
+      doors.last.priority = 3;
+      world.add(doors.last);
+    }
+    if (intermediateDoorObjects != null) {
+      doors.add(
+        Door(keyItemString: 'IntermediateKey')
+          ..position = Vector2(
+            intermediateDoorObjects!.objects.first.x,
+            intermediateDoorObjects!.objects.first.y,
+          ),
+      );
+
+      doors.last.priority = 3;
+      world.add(doors.last);
+    }
+    if (advancedDoorObjects != null) {
+      doors.add(
+        Door(keyItemString: 'AdvancedKey')
+          ..position = Vector2(
+            advancedDoorObjects!.objects.first.x,
+            advancedDoorObjects!.objects.first.y,
+          ),
+      );
+
+      doors.last.priority = 3;
+      world.add(doors.last);
+    }
+  }
+
   void _loadTeleporter() {
     String level = '';
     if (teleportationObjects != null) {
@@ -321,6 +412,20 @@ class TestGame extends FlameGame
       _addTeleporterObjects(
         level: level,
         teleportationObjectGroup: beginnerMapTeleporter,
+      );
+    }
+    if (intermediateMapTeleporter != null) {
+      level = 'intermediate_map.tmx';
+      _addTeleporterObjects(
+        level: level,
+        teleportationObjectGroup: intermediateMapTeleporter,
+      );
+    }
+    if (advancedMapTeleporter != null) {
+      level = 'advanced_map.tmx';
+      _addTeleporterObjects(
+        level: level,
+        teleportationObjectGroup: advancedMapTeleporter,
       );
     }
   }
@@ -358,6 +463,9 @@ class TestGame extends FlameGame
     wallsList = [];
     blockedZone = [];
     teleporterZone = [];
+    doors = [];
+    _buttons = [];
+    _boxes = [];
     world.remove(_player);
     characterPosition = null;
   }
@@ -386,11 +494,15 @@ class TestGame extends FlameGame
     switch (slimeType) {
       case 'Land':
         addBlockedZone(waterObjects);
-        addBlockedZone(lavaObjects);
+        if (removeLavaWalls == false) {
+          addBlockedZone(lavaObjects);
+        }
         slimeImage = 'Slime1_Idle_body.png';
       case 'Water':
         addBlockedZone(landObjects);
-        addBlockedZone(lavaObjects);
+        if (removeLavaWalls == false) {
+          addBlockedZone(lavaObjects);
+        }
         addBlockedZone(groundObjects);
         slimeImage = 'Slime2_Idle_body.png';
       case 'Lava':
@@ -465,20 +577,19 @@ class TestGame extends FlameGame
   }
 
   void collectKey() {
-    world.remove(beginnerDoor);
-    collectedItems.add(worldKey);
+    for (Door door in doors) {
+      world.remove(door);
 
-    beginnerDoor = Door(keyItemString: worldKey);
-    if (beginnerDoorObjects != null) {
-      beginnerDoor = Door(keyItemString: worldKey)
+      door = Door(keyItemString: door.keyItemString)
         ..position = Vector2(
           beginnerDoorObjects!.objects.first.x,
           beginnerDoorObjects!.objects.first.y,
         );
 
-      beginnerDoor.priority = 3;
-      world.add(beginnerDoor);
+      door.priority = 3;
+      world.add(door);
     }
+    collectedItems.add(worldKey);
   }
 
   @override

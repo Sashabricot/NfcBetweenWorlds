@@ -25,6 +25,7 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
   @override
   void onMount() {
     remove(hitBox!);
+
     int amount = 1;
     if (game.collectedItems.contains(keyItemString)) {
       amount = 6;
