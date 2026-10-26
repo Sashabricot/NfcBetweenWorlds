@@ -41,7 +41,7 @@ class TestGame extends FlameGame
   bool removeLavaWalls = false;
   int actionedButtonsNumber = 0;
 
-  late Player _player;
+  late Player player;
   late JoystickComponent _joystick;
   late KeyItem _key;
   List<BoxItem> _boxes = [];
@@ -200,7 +200,7 @@ class TestGame extends FlameGame
       isBlocked = isPlayerInBlockedZone(characterPosition!);
     }
 
-    _player = Player(
+    player = Player(
       playerState: PlayerState.bottomIdle,
       isBlocked: isBlocked,
       position: characterPosition,
@@ -369,10 +369,10 @@ class TestGame extends FlameGame
       world.add(waterBridgesLayer!);
     }
 
-    _player.priority = 3;
+    player.priority = 3;
 
-    world.add(_player);
-    camera.follow(_player, snap: true);
+    world.add(player);
+    camera.follow(player, snap: true);
   }
 
   void _removeLayers() {
@@ -602,7 +602,7 @@ class TestGame extends FlameGame
     doors = [];
     _buttons = [];
     _boxes = [];
-    world.remove(_player);
+    world.remove(player);
     characterPosition = null;
     actionedButtonsNumber = 0;
   }
@@ -674,16 +674,16 @@ class TestGame extends FlameGame
         world.remove(zone);
       }
 
-      final playerState = _player.playerState;
-      final position = _player.position;
+      final playerState = player.playerState;
+      final position = player.position;
 
       blockedZone = [];
       slimeType = nfcDataNotifier.nfcType;
-      world.remove(_player);
+      world.remove(player);
       _loadWalkingType();
 
       bool isBlocked = isPlayerInBlockedZone(position);
-      _player = Player(
+      player = Player(
         playerState: playerState,
         position: position,
         joystick: _joystick,
@@ -694,7 +694,7 @@ class TestGame extends FlameGame
       _removeLayers();
       _loadLayers(levelMap);
 
-      camera.follow(_player, snap: true);
+      camera.follow(player, snap: true);
     } else if (nfcDataNotifier.shouldTeleportToSlimeHub) {
       if (collectedItems.contains('BeginnerKey')) {
         changeLevel('teleportation_map.tmx');
@@ -712,7 +712,7 @@ class TestGame extends FlameGame
       boxesPosition.add(box.position);
     }
     await nfcDataNotifier.savePlayerDataOnNfc(
-      position: _player.position,
+      position: player.position,
       level: level!,
       stopNfcWriting: stopNfcWriting,
       collectedItems: collectedItems,
