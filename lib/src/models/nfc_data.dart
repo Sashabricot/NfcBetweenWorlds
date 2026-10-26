@@ -11,7 +11,7 @@ class NfcData {
     this.slimeType,
     this.characterLevel,
   }) {
-    characterPosition = '';
+    characterPosition = null;
     characterItems = [];
 
     if (ndefMessage != null) {
@@ -23,6 +23,8 @@ class NfcData {
           switch (typeNameFormatString) {
             case 'U':
               characterPosition = utf8.decode(record.payload);
+            case 'T':
+              boxesPosition.add(utf8.decode(record.payload));
             case 'g:i':
               switch (utf8.decode(record.payload)) {
                 case '0':
@@ -32,7 +34,8 @@ class NfcData {
                 case '2':
                   characterItems.add('AdvancedKey');
               }
-
+            case 'w:r':
+              shouldResetWorldValues = true;
             case 'g:l':
               characterLevel = utf8.decode(record.payload);
             case 's:t':
@@ -45,12 +48,14 @@ class NfcData {
     }
   }
   bool? shouldTeleportToSlimeHub;
+  bool? shouldResetWorldValues;
   Uint8List? slimeType;
   final NdefMessage? ndefMessage;
   final String uid;
   String? characterPosition;
   List<String> characterItems = [];
   String? characterLevel;
+  List<String> boxesPosition = [];
 
   String _getType(NdefRecord record) {
     switch (record.typeNameFormat) {

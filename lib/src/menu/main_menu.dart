@@ -31,6 +31,7 @@ class MainMenu extends StatelessWidget {
                     slimeType: characterSaveData['nfcType'],
                     level: characterSaveData['level'],
                     characterItems: characterSaveData['items'],
+                    savedBoxesPosition: characterSaveData['boxesPosition'],
                   );
                 },
                 overlayBuilderMap: {

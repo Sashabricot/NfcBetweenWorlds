@@ -36,7 +36,7 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
       game.images.fromCache('DoubleDoor1.png'),
       SpriteAnimationData.sequenced(
         amount: amount,
-        stepTime: 0.2,
+        stepTime: 0.1,
         textureSize: doorSpriteSize,
         loop: false,
       ),

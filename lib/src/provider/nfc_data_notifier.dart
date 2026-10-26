@@ -19,6 +19,7 @@ class NfcDataNotifier extends ChangeNotifier {
     ndefMessage: NdefMessage(records: []),
     uid: '',
   );
+  bool shouldResetWorldValues = false;
   bool isProcessing = false;
   bool shouldUpdate = false;
   bool shouldTeleportToSlimeHub = false;
@@ -50,6 +51,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required Completer stopNfcWriting,
     required String level,
     required List<String> collectedItems,
+    required List<Vector2> boxesPosition,
   }) async {
     shouldUpdate = false;
     isProcessing = true;
@@ -63,6 +65,7 @@ class NfcDataNotifier extends ChangeNotifier {
         stopNfcWriting: stopNfcWriting,
         level: level,
         collectedItems: collectedItems,
+        boxesPosition: boxesPosition,
       ),
     );
     await stopNfcWriting.future;
@@ -76,9 +79,12 @@ class NfcDataNotifier extends ChangeNotifier {
     required Completer stopNfcWriting,
     required String level,
     required List<String> collectedItems,
+    required List<Vector2> boxesPosition,
   }) async {
     try {
-      final String positionString = '${position.x},${position.y}';
+      final String positionXString = '${position.x}'.substring(0, 7);
+      final String positionYString = '${position.y}'.substring(0, 7);
+      final String positionString = '$positionXString,$positionYString';
 
       final NdefMessage saveData = NdefMessage(
         records: [
@@ -122,6 +128,17 @@ class NfcDataNotifier extends ChangeNotifier {
             ),
           );
         }
+      }
+
+      for (Vector2 position in boxesPosition) {
+        saveData.records.add(
+          NdefRecord(
+            typeNameFormat: .wellKnown,
+            type: utf8.encode('T'),
+            identifier: Uint8List.fromList([]),
+            payload: utf8.encode('${position.x},${position.y}'),
+          ),
+        );
       }
 
       final ndef = Ndef.from(nfc);
@@ -176,8 +193,22 @@ class NfcDataNotifier extends ChangeNotifier {
       } else {
         newNfc = _nfcTags[nfcUid]!;
       }
-      if (_latestNfcData.uid != newNfc.uid) {
-        if (newNfc.slimeType != null) {
+      if (newNfc.shouldTeleportToSlimeHub != null &&
+          newNfc.shouldTeleportToSlimeHub!) {
+        shouldUpdate = false;
+        shouldTeleportToSlimeHub = true;
+        notifyListeners();
+        shouldUpdate = true;
+        shouldTeleportToSlimeHub = false;
+      } else if (newNfc.shouldResetWorldValues != null &&
+          newNfc.shouldResetWorldValues!) {
+        shouldUpdate = false;
+        shouldResetWorldValues = true;
+        notifyListeners();
+        shouldUpdate = true;
+        shouldResetWorldValues = false;
+      } else if (_latestNfcData.uid != newNfc.uid) {
+        if (newNfc.slimeType != null && newNfc.characterPosition == null) {
           switch (newNfc.slimeType) {
             case [50]:
               _nfcUtf8Type = newNfc.slimeType!;
@@ -194,13 +225,6 @@ class NfcDataNotifier extends ChangeNotifier {
             default:
           }
         }
-      } else if (newNfc.shouldTeleportToSlimeHub != null &&
-          newNfc.shouldTeleportToSlimeHub!) {
-        shouldUpdate = false;
-        shouldTeleportToSlimeHub = true;
-        notifyListeners();
-        shouldUpdate = true;
-        shouldTeleportToSlimeHub = false;
       }
       _latestNfcData = newNfc;
     } catch (e) {
@@ -245,6 +269,7 @@ class NfcDataNotifier extends ChangeNotifier {
     String? level;
     List<String>? characterItems;
     List<String>? collectedItems;
+    List<Vector2> boxesPosition = [];
     try {
       final Ndef? ndef = Ndef.from(nfc);
       final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
@@ -279,15 +304,24 @@ class NfcDataNotifier extends ChangeNotifier {
         nfcSavedType = _nfcType;
       }
       if (newNfc.characterPosition != null) {
-        characterPosition = parseCharacterPosition(newNfc.characterPosition!);
+        characterPosition = parseVector2Position(newNfc.characterPosition!);
         if (characterPosition == null && newNfc.slimeType != null) {
           throw Exception('Please use a new NFC card');
+        }
+      }
+      for (String boxPosition in newNfc.boxesPosition) {
+        Vector2? boxParsedPosition = parseVector2Position(boxPosition);
+        if (boxParsedPosition != null) {
+          boxesPosition.add(boxParsedPosition);
         }
       }
       if (newNfc.characterLevel != null) {
         level = newNfc.characterLevel;
       }
       if (newNfc.shouldTeleportToSlimeHub != null) {
+        throw Exception('Please use a new NFC card');
+      }
+      if (newNfc.shouldResetWorldValues != null) {
         throw Exception('Please use a new NFC card');
       }
       if (newNfc.characterItems.isNotEmpty) {
@@ -309,6 +343,7 @@ class NfcDataNotifier extends ChangeNotifier {
         'nfcType': nfcSavedType,
         'level': level,
         'items': characterItems,
+        'boxesPosition': boxesPosition,
       });
 
       stopNfcSaveReading.complete();
@@ -322,7 +357,7 @@ class NfcDataNotifier extends ChangeNotifier {
     }
   }
 
-  Vector2? parseCharacterPosition(String position) {
+  Vector2? parseVector2Position(String position) {
     List<double> characterPosition = [];
     List<String> positions = position.split(',');
     for (String position in positions) {
