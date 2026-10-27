@@ -25,6 +25,7 @@ class PauseButton extends StatelessWidget {
           child: GestureDetector(
             onTap: () {
               game.pauseEngine();
+              game.interval.timer.pause();
               showDialog(
                 barrierDismissible: false,
                 context: context,

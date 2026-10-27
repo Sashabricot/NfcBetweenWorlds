@@ -114,6 +114,9 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
     }
 
     if (!isBlocked) {
+      if (!game.interval.timer.isRunning() && position != nextPosition) {
+        game.interval.timer.start();
+      }
       position = nextPosition;
     }
 

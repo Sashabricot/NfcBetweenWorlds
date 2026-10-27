@@ -42,6 +42,8 @@ class NfcData {
               slimeType = record.payload;
             case 's:h':
               shouldTeleportToSlimeHub = true;
+            case 'p:t':
+              playerTimer = int.tryParse(utf8.decode(record.payload));
           }
         }
       }
@@ -56,6 +58,7 @@ class NfcData {
   List<String> characterItems = [];
   String? characterLevel;
   List<String> boxesPosition = [];
+  int? playerTimer = 0;
 
   String _getType(NdefRecord record) {
     switch (record.typeNameFormat) {

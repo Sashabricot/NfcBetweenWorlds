@@ -52,6 +52,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required String level,
     required List<String> collectedItems,
     required List<Vector2> boxesPosition,
+    required int? playerTimer,
   }) async {
     shouldUpdate = false;
     isProcessing = true;
@@ -66,6 +67,7 @@ class NfcDataNotifier extends ChangeNotifier {
         level: level,
         collectedItems: collectedItems,
         boxesPosition: boxesPosition,
+        playerTimer: playerTimer,
       ),
     );
     await stopNfcWriting.future;
@@ -80,6 +82,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required String level,
     required List<String> collectedItems,
     required List<Vector2> boxesPosition,
+    required int? playerTimer,
   }) async {
     try {
       final String positionXString = '${position.x}'.substring(0, 7);
@@ -140,6 +143,15 @@ class NfcDataNotifier extends ChangeNotifier {
           ),
         );
       }
+
+      saveData.records.add(
+        NdefRecord(
+          typeNameFormat: .external,
+          type: utf8.encode('p:t'),
+          identifier: Uint8List.fromList([]),
+          payload: utf8.encode(playerTimer.toString()),
+        ),
+      );
 
       final ndef = Ndef.from(nfc);
       if (ndef == null) throw ('Tag is not ndef');
@@ -270,6 +282,7 @@ class NfcDataNotifier extends ChangeNotifier {
     List<String>? characterItems;
     List<String>? collectedItems;
     List<Vector2> boxesPosition = [];
+    int? playerTimer;
     try {
       final Ndef? ndef = Ndef.from(nfc);
       final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
@@ -338,12 +351,16 @@ class NfcDataNotifier extends ChangeNotifier {
           }
         }
       }
+      if (newNfc.playerTimer != null) {
+        playerTimer = newNfc.playerTimer;
+      }
       characterSaveData.addAll({
         'characterPosition': characterPosition,
         'nfcType': nfcSavedType,
         'level': level,
         'items': characterItems,
         'boxesPosition': boxesPosition,
+        'playerTimer': playerTimer,
       });
 
       stopNfcSaveReading.complete();

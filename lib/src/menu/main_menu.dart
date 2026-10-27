@@ -32,6 +32,7 @@ class MainMenu extends StatelessWidget {
                     level: characterSaveData['level'],
                     characterItems: characterSaveData['items'],
                     savedBoxesPosition: characterSaveData['boxesPosition'],
+                    playerTimer: characterSaveData['playerTimer'],
                   );
                 },
                 overlayBuilderMap: {

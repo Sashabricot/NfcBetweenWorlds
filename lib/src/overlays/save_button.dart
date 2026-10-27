@@ -25,6 +25,7 @@ class SaveButton extends StatelessWidget {
             onTap: () {
               Completer stopNfcWriting = Completer();
               game.pauseEngine();
+              game.interval.timer.pause();
               game.savePlayerDataOnNfc(stopNfcWriting: stopNfcWriting);
               showDialog(
                 barrierDismissible: false,

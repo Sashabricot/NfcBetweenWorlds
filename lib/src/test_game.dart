@@ -4,7 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flame/sprite.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:flame_tiled_utils/flame_tiled_utils.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:gamepads/gamepads.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/actors/player_state.dart';
@@ -26,6 +26,7 @@ class TestGame extends FlameGame
     this.slimeType,
     this.level,
     this.characterItems,
+    this.playerTimer,
     required this.savedBoxesPosition,
   });
   String? slimeType;
@@ -40,9 +41,14 @@ class TestGame extends FlameGame
   List<String>? characterItems;
   bool removeLavaWalls = false;
   int actionedButtonsNumber = 0;
+  int? playerTimer;
+  int gameTimer = 0;
+  TimerComponent interval = TimerComponent(period: 1);
+  Vector2 timerPosition = Vector2.all(0);
+  EdgeInsets joystickPosition = EdgeInsets.all(0);
 
   late Player player;
-  late JoystickComponent _joystick;
+  JoystickComponent? _joystick;
   late KeyItem _key;
   List<BoxItem> _boxes = [];
   List<Button> _buttons = [];
@@ -73,6 +79,7 @@ class TestGame extends FlameGame
   ObjectGroup? finalButtonObjects;
   ObjectGroup? decorationsObjects;
 
+  TextComponent? timerText;
   PositionComponent? landLayer;
   PositionComponent? lavaLayer;
   PositionComponent? waterLayer;
@@ -93,6 +100,38 @@ class TestGame extends FlameGame
 
   @override
   FutureOr<void> onLoad() async {
+    timerPosition = Vector2(
+      (camera.viewport.virtualSize.x / 2) - 60,
+      camera.viewport.virtualSize.y * 0.1,
+    );
+    joystickPosition = .only(
+      left: (MediaQuery.of(buildContext!).size.width / 2) - 75,
+      bottom: MediaQuery.of(buildContext!).size.height * 0.15,
+    );
+    interval = TimerComponent(
+      period: 1,
+      onTick: () {
+        gameTimer += 1;
+        timerText!.text = 'Secondes: $gameTimer';
+      },
+      repeat: true,
+    );
+    interval.timer.pause();
+
+    world.add(interval);
+    if (playerTimer != null) {
+      gameTimer = playerTimer!;
+    }
+
+    timerText = TextComponent(
+      text: 'Secondes: $gameTimer',
+      position: timerPosition,
+      priority: 5,
+      textRenderer: TextPaint(
+        style: TextStyle(color: Colors.white, fontSize: 20),
+      ),
+    );
+    camera.viewport.add(timerText!);
     if (characterItems != null && characterItems!.isNotEmpty) {
       collectedItems.addAll(characterItems!);
     }
@@ -111,15 +150,15 @@ class TestGame extends FlameGame
     _loadJoystick();
     final gamepads = await Gamepads.list();
     if (gamepads.isEmpty) {
-      camera.viewport.add(_joystick);
+      camera.viewport.add(_joystick!);
     }
 
     Gamepads.onConnected.listen((event) {
-      camera.viewport.remove(_joystick);
+      camera.viewport.remove(_joystick!);
     });
 
     Gamepads.onDisconnected.listen((event) {
-      camera.viewport.add(_joystick);
+      camera.viewport.add(_joystick!);
     });
 
     level ??= 'first_map.tmx';
@@ -128,6 +167,26 @@ class TestGame extends FlameGame
     nfcDataNotifier.startNfcCardTypeScan();
 
     return super.onLoad();
+  }
+
+  void _loadJoystick() {
+    final sheet = SpriteSheet.fromColumnsAndRows(
+      image: images.fromCache('joystick.png'),
+      columns: 6,
+      rows: 1,
+    );
+
+    _joystick = JoystickComponent(
+      knob: SpriteComponent(
+        sprite: sheet.getSpriteById(1),
+        size: Vector2.all(100),
+      ),
+      background: SpriteComponent(
+        sprite: sheet.getSpriteById(0),
+        size: Vector2.all(150),
+      ),
+      margin: joystickPosition,
+    );
   }
 
   Future<void> _loadLevel(String level) async {
@@ -455,7 +514,6 @@ class TestGame extends FlameGame
     if (actionedButtonsNumber == 2) {
       finalDoor!.toggleDoor();
     }
-    
   }
 
   void _removeActionedButton() {
@@ -465,7 +523,6 @@ class TestGame extends FlameGame
     if (actionedButtonsNumber > 0) {
       actionedButtonsNumber -= 1;
     }
-    
   }
 
   void _loadDoors() {
@@ -607,26 +664,6 @@ class TestGame extends FlameGame
     actionedButtonsNumber = 0;
   }
 
-  void _loadJoystick() {
-    final sheet = SpriteSheet.fromColumnsAndRows(
-      image: images.fromCache('joystick.png'),
-      columns: 6,
-      rows: 1,
-    );
-
-    _joystick = JoystickComponent(
-      knob: SpriteComponent(
-        sprite: sheet.getSpriteById(1),
-        size: Vector2.all(100),
-      ),
-      background: SpriteComponent(
-        sprite: sheet.getSpriteById(0),
-        size: Vector2.all(150),
-      ),
-      margin: const EdgeInsets.only(left: 40, bottom: 40),
-    );
-  }
-
   void _loadWalkingType() {
     switch (slimeType) {
       case 'Land':
@@ -717,6 +754,7 @@ class TestGame extends FlameGame
       stopNfcWriting: stopNfcWriting,
       collectedItems: collectedItems,
       boxesPosition: boxesPosition,
+      playerTimer: gameTimer,
     );
   }
 
@@ -739,6 +777,26 @@ class TestGame extends FlameGame
   @override
   void onGameResize(Vector2 size) {
     nfcDataNotifier.startNfcCardTypeScan();
+
+    if (_joystick != null && _joystick!.isLoaded) {
+      joystickPosition = .only(
+        left: (MediaQuery.of(buildContext!).size.width / 2) - 75,
+        bottom: MediaQuery.of(buildContext!).size.height * 0.15,
+      );
+      camera.viewport.remove(_joystick!);
+      _joystick!.margin = joystickPosition;
+
+      camera.viewport.add(_joystick!);
+    }
+    if (timerText != null && timerText!.isLoaded) {
+      timerPosition = Vector2(
+        (MediaQuery.of(buildContext!).size.width / 2) - 60,
+        MediaQuery.of(buildContext!).size.height * 0.1,
+      );
+      camera.viewport.remove(timerText!);
+      timerText!.position = timerPosition;
+      camera.viewport.add(timerText!);
+    }
     super.onGameResize(size);
   }
 

@@ -27,6 +27,7 @@ class Teleporter extends PositionComponent
   ) async {
     if (other is Player) {
       if (!hasChanged) {
+        game.interval.timer.pause();
         hasChanged = true;
         game.player.add(
           ParticleSystemComponent(
