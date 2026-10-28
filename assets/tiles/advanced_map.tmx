@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="32" nextobjectid="197">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="60" height="60" tilewidth="32" tileheight="32" infinite="0" nextlayerid="33" nextobjectid="198">
  <tileset firstgid="1" name="Map_tiles" tilewidth="32" tileheight="32" tilecount="144" columns="12">
   <image source="../images/Map_tiles.png" width="384" height="384"/>
  </tileset>
@@ -170,6 +170,9 @@
  </objectgroup>
  <objectgroup id="9" name="Teleporter">
   <object id="67" x="832" y="1023.5" width="64" height="64.5"/>
+ </objectgroup>
+ <objectgroup id="32" name="CongratulationsTeleporter">
+  <object id="197" x="1055.75" y="1024.25" width="64.25" height="63.5"/>
  </objectgroup>
  <objectgroup id="22" name="LavaButton">
   <object id="64" x="1248.17" y="904.667">

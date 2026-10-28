@@ -15,7 +15,12 @@ import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
 import 'package:nfc_between_worlds/src/game/objects/key.dart';
 import 'package:nfc_between_worlds/src/game/objects/teleporter.dart';
+import 'package:nfc_between_worlds/src/game/objects/timer_position_component.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
+import 'package:nfc_between_worlds/src/leaderboard/hive_service.dart';
+import 'package:nfc_between_worlds/src/menu/congratulations_menu.dart';
+import 'package:nfc_between_worlds/src/menu/main_menu.dart';
+import 'package:nfc_between_worlds/src/models/leaderboard_record.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class TestGame extends FlameGame
@@ -28,7 +33,10 @@ class TestGame extends FlameGame
     this.characterItems,
     this.playerTimer,
     required this.savedBoxesPosition,
+    required this.characterName,
   });
+
+  String characterName;
   String? slimeType;
   Vector2? characterPosition;
   List<Vector2> savedBoxesPosition;
@@ -66,6 +74,7 @@ class TestGame extends FlameGame
   ObjectGroup? intermediateDoorObjects;
   ObjectGroup? advancedDoorObjects;
   ObjectGroup? teleportationObjects;
+
   ObjectGroup? firstMapTeleporter;
   ObjectGroup? beginnerMapTeleporter;
   ObjectGroup? intermediateMapTeleporter;
@@ -78,8 +87,9 @@ class TestGame extends FlameGame
   ObjectGroup? doorButtonObjects;
   ObjectGroup? finalButtonObjects;
   ObjectGroup? decorationsObjects;
+  ObjectGroup? congratulationsTeleporter;
 
-  TextComponent? timerText;
+  PositionComponent? timer;
   PositionComponent? landLayer;
   PositionComponent? lavaLayer;
   PositionComponent? waterLayer;
@@ -100,8 +110,19 @@ class TestGame extends FlameGame
 
   @override
   FutureOr<void> onLoad() async {
+    await images.loadAll([
+      'timer.png',
+      'Slime1_Idle_body.png',
+      'Slime2_Idle_body.png',
+      'Slime3_Idle_body.png',
+      'joystick.png',
+      'key.png',
+      'box.png',
+      'DoubleDoor1.png',
+      'button.png',
+    ]);
     timerPosition = Vector2(
-      (camera.viewport.virtualSize.x / 2) - 60,
+      (camera.viewport.virtualSize.x / 2),
       camera.viewport.virtualSize.y * 0.1,
     );
     joystickPosition = .only(
@@ -112,7 +133,6 @@ class TestGame extends FlameGame
       period: 1,
       onTick: () {
         gameTimer += 1;
-        timerText!.text = 'Secondes: $gameTimer';
       },
       repeat: true,
     );
@@ -123,30 +143,14 @@ class TestGame extends FlameGame
       gameTimer = playerTimer!;
     }
 
-    timerText = TextComponent(
-      text: 'Secondes: $gameTimer',
-      position: timerPosition,
-      priority: 5,
-      textRenderer: TextPaint(
-        style: TextStyle(color: Colors.white, fontSize: 20),
-      ),
-    );
-    camera.viewport.add(timerText!);
+    timer = TimerPositionComponent();
+    camera.viewport.add(timer!);
     if (characterItems != null && characterItems!.isNotEmpty) {
       collectedItems.addAll(characterItems!);
     }
     WidgetsBinding.instance.addObserver(this);
     nfcDataNotifier.addListener(_updateWorldFromNFC);
-    await images.loadAll([
-      'Slime1_Idle_body.png',
-      'Slime2_Idle_body.png',
-      'Slime3_Idle_body.png',
-      'joystick.png',
-      'key.png',
-      'box.png',
-      'DoubleDoor1.png',
-      'button.png',
-    ]);
+
     _loadJoystick();
     final gamepads = await Gamepads.list();
     if (gamepads.isEmpty) {
@@ -221,7 +225,7 @@ class TestGame extends FlameGame
       'AdvancedDoor',
     );
     buttonDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('ButtonDoor');
-    finalDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('FinalDoor');
+    // finalDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('FinalDoor');
 
     groundObjects = levelMap.tileMap.getLayer<ObjectGroup>('GroundZone');
 
@@ -238,6 +242,10 @@ class TestGame extends FlameGame
     advancedMapTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
       'AdvancedMapTeleporter',
     );
+    congratulationsTeleporter = levelMap.tileMap.getLayer<ObjectGroup>(
+      'CongratulationsTeleporter',
+    );
+
     teleportationObjects = levelMap.tileMap.getLayer<ObjectGroup>('Teleporter');
 
     lavaButtonObjects = levelMap.tileMap.getLayer<ObjectGroup>('LavaButton');
@@ -500,8 +508,8 @@ class TestGame extends FlameGame
         _buttons.add(
           Button(
             position: Vector2(element.x, element.y),
-            buttonPressedAction: _addActionedButton,
-            buttonNotPressedAction: _removeActionedButton,
+            buttonPressedAction: _incrementActionedButton,
+            buttonNotPressedAction: _decrementActionedButton,
           )..priority = 2,
         );
         world.add(_buttons.last);
@@ -509,14 +517,14 @@ class TestGame extends FlameGame
     }
   }
 
-  void _addActionedButton() {
+  void _incrementActionedButton() {
     actionedButtonsNumber += 1;
     if (actionedButtonsNumber == 2) {
       finalDoor!.toggleDoor();
     }
   }
 
-  void _removeActionedButton() {
+  void _decrementActionedButton() {
     if (actionedButtonsNumber == 2) {
       finalDoor!.toggleDoor();
     }
@@ -621,6 +629,13 @@ class TestGame extends FlameGame
         teleportationObjectGroup: advancedMapTeleporter,
       );
     }
+    if (congratulationsTeleporter != null) {
+      level = 'congratulations';
+      _addTeleporterObjects(
+        level: level,
+        teleportationObjectGroup: congratulationsTeleporter,
+      );
+    }
   }
 
   void _addTeleporterObjects({
@@ -641,9 +656,13 @@ class TestGame extends FlameGame
   }
 
   void changeLevel(String newLevel) {
-    _resetWorldValues();
-    level = newLevel;
-    _loadLevel(newLevel);
+    if (newLevel == 'congratulations') {
+      _showCongratulations();
+    } else {
+      _resetWorldValues();
+      level = newLevel;
+      _loadLevel(newLevel);
+    }
   }
 
   void _resetWorldValues() {
@@ -740,7 +759,46 @@ class TestGame extends FlameGame
       }
     } else if (nfcDataNotifier.shouldResetWorldValues) {
       changeLevel(level!);
+    } else if (nfcDataNotifier.shouldReturnToMenu) {
+      Navigator.pushReplacement(
+        buildContext!,
+        MaterialPageRoute(
+          builder: (context) => PopScope(
+            canPop: false,
+            child: MainMenu(nfcDataNotifier: nfcDataNotifier),
+          ),
+        ),
+      );
     }
+  }
+
+  void _showCongratulations() {
+    LeaderboardRecord record = HiveService()
+        .getLeaderboardRecordBox()
+        .values
+        .firstWhere(
+          (record) => record.name == characterName,
+          orElse: () => LeaderboardRecord(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: characterName,
+            time: 1234567890,
+          ),
+        );
+    if (record.time > gameTimer) record.time = gameTimer;
+    HiveService().getLeaderboardRecordBox().put(record.id, record);
+    Navigator.pushReplacement(
+      buildContext!,
+      MaterialPageRoute(
+        builder: (context) => PopScope(
+          canPop: false,
+          child: CongratulationsMenu(
+            nfcDataNotifier: nfcDataNotifier,
+            playerName: record.name,
+            time: gameTimer,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> savePlayerDataOnNfc({required Completer stopNfcWriting}) async {
@@ -749,6 +807,7 @@ class TestGame extends FlameGame
       boxesPosition.add(box.position);
     }
     await nfcDataNotifier.savePlayerDataOnNfc(
+      characterName: characterName,
       position: player.position,
       level: level!,
       stopNfcWriting: stopNfcWriting,
@@ -788,14 +847,14 @@ class TestGame extends FlameGame
 
       camera.viewport.add(_joystick!);
     }
-    if (timerText != null && timerText!.isLoaded) {
+    if (timer != null && timer!.isLoaded) {
       timerPosition = Vector2(
-        (MediaQuery.of(buildContext!).size.width / 2) - 60,
+        (MediaQuery.of(buildContext!).size.width / 2),
         MediaQuery.of(buildContext!).size.height * 0.1,
       );
-      camera.viewport.remove(timerText!);
-      timerText!.position = timerPosition;
-      camera.viewport.add(timerText!);
+      // camera.viewport.remove(timerText!);
+      timer!.position = timerPosition;
+      camera.viewport.add(timer!);
     }
     super.onGameResize(size);
   }

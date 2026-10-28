@@ -44,11 +44,17 @@ class NfcData {
               shouldTeleportToSlimeHub = true;
             case 'p:t':
               playerTimer = int.tryParse(utf8.decode(record.payload));
+            case 'g:m':
+              shouldReturnToMenu = true;
+            case 'c:n':
+              characterName = utf8.decode(record.payload);
           }
         }
       }
     }
   }
+  String? characterName;
+  bool? shouldReturnToMenu;
   bool? shouldTeleportToSlimeHub;
   bool? shouldResetWorldValues;
   Uint8List? slimeType;

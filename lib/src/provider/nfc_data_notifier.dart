@@ -23,6 +23,7 @@ class NfcDataNotifier extends ChangeNotifier {
   bool isProcessing = false;
   bool shouldUpdate = false;
   bool shouldTeleportToSlimeHub = false;
+  bool shouldReturnToMenu = false;
   Exception? error;
   String nfcSaveMessage = '';
 
@@ -53,6 +54,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required List<String> collectedItems,
     required List<Vector2> boxesPosition,
     required int? playerTimer,
+    required String characterName,
   }) async {
     shouldUpdate = false;
     isProcessing = true;
@@ -61,6 +63,7 @@ class NfcDataNotifier extends ChangeNotifier {
     NfcManager.instance.startSession(
       pollingOptions: {NfcPollingOption.iso14443},
       onDiscovered: (NfcTag nfc) async => _writeNfcSaveData(
+        characterName: characterName,
         nfc: nfc,
         position: position,
         stopNfcWriting: stopNfcWriting,
@@ -83,6 +86,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required List<String> collectedItems,
     required List<Vector2> boxesPosition,
     required int? playerTimer,
+    required String characterName,
   }) async {
     try {
       final String positionXString = '${position.x}'.substring(0, 7);
@@ -153,6 +157,15 @@ class NfcDataNotifier extends ChangeNotifier {
         ),
       );
 
+      saveData.records.add(
+        NdefRecord(
+          typeNameFormat: .external,
+          type: utf8.encode('c:n'),
+          identifier: utf8.encode(''),
+          payload: utf8.encode(characterName),
+        ),
+      );
+
       final ndef = Ndef.from(nfc);
       if (ndef == null) throw ('Tag is not ndef');
       if (!ndef.isWritable) throw ('Tag is not writeable');
@@ -219,6 +232,13 @@ class NfcDataNotifier extends ChangeNotifier {
         notifyListeners();
         shouldUpdate = true;
         shouldResetWorldValues = false;
+      } else if (newNfc.shouldReturnToMenu != null &&
+          newNfc.shouldReturnToMenu!) {
+        shouldUpdate = false;
+        shouldReturnToMenu = true;
+        notifyListeners();
+        shouldUpdate = true;
+        shouldReturnToMenu = false;
       } else if (_latestNfcData.uid != newNfc.uid) {
         if (newNfc.slimeType != null && newNfc.characterPosition == null) {
           switch (newNfc.slimeType) {
@@ -263,8 +283,10 @@ class NfcDataNotifier extends ChangeNotifier {
         ),
       },
     );
+
     await stopNfcSaveReading.future;
-    blockSystemNfc();
+    // blockSystemNfc();
+
     return characterSaveData;
   }
 
@@ -279,6 +301,7 @@ class NfcDataNotifier extends ChangeNotifier {
     Vector2? characterPosition;
     NfcData newNfc;
     String? level;
+    String? characterName;
     List<String>? characterItems;
     List<String>? collectedItems;
     List<Vector2> boxesPosition = [];
@@ -305,7 +328,6 @@ class NfcDataNotifier extends ChangeNotifier {
           case [50]:
             _nfcUtf8Type = newNfc.slimeType!;
             _nfcType = 'Land';
-
           case [49]:
             _nfcUtf8Type = newNfc.slimeType!;
             _nfcType = 'Water';
@@ -315,13 +337,14 @@ class NfcDataNotifier extends ChangeNotifier {
           default:
         }
         nfcSavedType = _nfcType;
-      }
-      if (newNfc.characterPosition != null) {
-        characterPosition = parseVector2Position(newNfc.characterPosition!);
-        if (characterPosition == null && newNfc.slimeType != null) {
+        if (newNfc.characterPosition == null && newNfc.slimeType != null) {
           throw Exception('Please use a new NFC card');
         }
       }
+      if (newNfc.characterPosition != null) {
+        characterPosition = parseVector2Position(newNfc.characterPosition!);
+      }
+
       for (String boxPosition in newNfc.boxesPosition) {
         Vector2? boxParsedPosition = parseVector2Position(boxPosition);
         if (boxParsedPosition != null) {
@@ -335,6 +358,9 @@ class NfcDataNotifier extends ChangeNotifier {
         throw Exception('Please use a new NFC card');
       }
       if (newNfc.shouldResetWorldValues != null) {
+        throw Exception('Please use a new NFC card');
+      }
+      if (newNfc.shouldReturnToMenu != null) {
         throw Exception('Please use a new NFC card');
       }
       if (newNfc.characterItems.isNotEmpty) {
@@ -354,6 +380,9 @@ class NfcDataNotifier extends ChangeNotifier {
       if (newNfc.playerTimer != null) {
         playerTimer = newNfc.playerTimer;
       }
+      if (newNfc.characterName != null) {
+        characterName = newNfc.characterName;
+      }
       characterSaveData.addAll({
         'characterPosition': characterPosition,
         'nfcType': nfcSavedType,
@@ -361,6 +390,7 @@ class NfcDataNotifier extends ChangeNotifier {
         'items': characterItems,
         'boxesPosition': boxesPosition,
         'playerTimer': playerTimer,
+        'characterName': characterName,
       });
 
       stopNfcSaveReading.complete();
