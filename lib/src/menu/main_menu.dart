@@ -10,111 +10,142 @@ import 'package:nfc_between_worlds/src/overlays/save_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 import 'package:nfc_between_worlds/src/test_game.dart';
 
-class MainMenu extends StatelessWidget {
+class MainMenu extends StatefulWidget {
   const MainMenu({super.key, required this.nfcDataNotifier});
   final NfcDataNotifier nfcDataNotifier;
 
   @override
-  Widget build(BuildContext context) {
-    Completer stopNfcSaveReading = Completer();
+  State<MainMenu> createState() => _MainMenuState();
+}
 
-    void initGame(Map<String, dynamic> characterSaveData) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PopScope(
-            canPop: false,
-            child: GameWidget<TestGame>.controlled(
-              gameFactory: () {
-                return TestGame(
-                  characterName: characterSaveData['characterName'] ??= 'test',
-                  nfcDataNotifier: nfcDataNotifier,
-                  characterPosition: characterSaveData['characterPosition'],
-                  slimeType: characterSaveData['nfcType'],
-                  level: characterSaveData['level'],
-                  characterItems: characterSaveData['items'],
-                  savedBoxesPosition: characterSaveData['boxesPosition'],
-                  playerTimer: characterSaveData['playerTimer'],
-                );
-              },
-              overlayBuilderMap: {
-                'SaveButton': (_, game) =>
-                    SaveButton(game: game, nfcDataNotifier: nfcDataNotifier),
-                'PauseButton': (_, game) =>
-                    PauseButton(game: game, nfcDataNotifier: nfcDataNotifier),
-              },
-              loadingBuilder: (context) =>
-                  Center(child: CircularProgressIndicator()),
+class _MainMenuState extends State<MainMenu> {
+  late final AppLifecycleListener _listener;
+  Completer stopNfcSaveReading = Completer();
+  void initGame(Map<String, dynamic> characterSaveData) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PopScope(
+          canPop: false,
+          child: GameWidget<TestGame>.controlled(
+            gameFactory: () {
+              return TestGame(
+                characterName: characterSaveData['characterName'] ??= 'test',
+                nfcDataNotifier: widget.nfcDataNotifier,
+                characterPosition: characterSaveData['characterPosition'],
+                slimeType: characterSaveData['nfcType'],
+                level: characterSaveData['level'],
+                characterItems: characterSaveData['items'],
+                savedBoxesPosition: characterSaveData['boxesPosition'],
+                playerTimer: characterSaveData['playerTimer'],
+              );
+            },
+            overlayBuilderMap: {
+              'SaveButton': (_, game) => SaveButton(
+                game: game,
+                nfcDataNotifier: widget.nfcDataNotifier,
+              ),
+              'PauseButton': (_, game) => PauseButton(
+                game: game,
+                nfcDataNotifier: widget.nfcDataNotifier,
+              ),
+            },
+            loadingBuilder: (context) =>
+                Center(child: CircularProgressIndicator()),
 
-              // initialActiveOverlays: const ['SaveButton', 'PauseButton'],
-              initialActiveOverlays: const ['SaveButton'],
-            ),
+            // initialActiveOverlays: const ['SaveButton', 'PauseButton'],
+            initialActiveOverlays: const ['SaveButton'],
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
-      if (nfcDataNotifier.error == null && characterSaveData != null) {
-        if (characterSaveData['characterName'] == null) {
-          showDialog(
-            barrierDismissible: false,
-            context: context,
-            builder: (context) => PopScope(
-              canPop: false,
-              child: AlertDialog(
-                title: Text('Choisissez un nom de joueur'),
-                content: SizedBox(
-                  height: 64,
-                  child: PlayerForm(
-                    initGame: initGame,
-                    characterSaveData: characterSaveData,
-                  ),
+  Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
+    if (widget.nfcDataNotifier.error == null && characterSaveData != null) {
+      if (characterSaveData['characterName'] == null) {
+        showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (context) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              title: Text('Choisissez un nom de joueur'),
+              content: SizedBox(
+                height: 64,
+                child: PlayerForm(
+                  initGame: initGame,
+                  characterSaveData: characterSaveData,
                 ),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () async {
-                      Navigator.pop(context, 'Annuler');
-                      stopNfcSaveReading = Completer();
-                      nfcDataNotifier
-                          .loadNfcSave(
-                            startNewGame: false,
-                            stopNfcSaveReading: stopNfcSaveReading,
-                            nfcDataNotifier: nfcDataNotifier,
-                          )
-                          .then(
-                            (characterSaveData) => loadGame(characterSaveData),
-                          );
-                    },
-                    child: Text('Annuler'),
-                  ),
-                ],
               ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context, 'Annuler');
+                    stopNfcSaveReading = Completer();
+                    widget.nfcDataNotifier
+                        .loadNfcSave(
+                          startNewGame: false,
+                          stopNfcSaveReading: stopNfcSaveReading,
+                          nfcDataNotifier: widget.nfcDataNotifier,
+                        )
+                        .then(
+                          (characterSaveData) => loadGame(characterSaveData),
+                        );
+                  },
+                  child: Text('Annuler'),
+                ),
+              ],
             ),
-          );
-        } else {
-          initGame(characterSaveData);
-        }
+          ),
+        );
       } else {
-        stopNfcSaveReading = Completer();
-        nfcDataNotifier
-            .loadNfcSave(
-              startNewGame: false,
-              stopNfcSaveReading: stopNfcSaveReading,
-              nfcDataNotifier: nfcDataNotifier,
-            )
-            .then((characterSaveData) => loadGame(characterSaveData));
+        initGame(characterSaveData);
       }
+    } else {
+      stopNfcSaveReading = Completer();
+      widget.nfcDataNotifier
+          .loadNfcSave(
+            startNewGame: false,
+            stopNfcSaveReading: stopNfcSaveReading,
+            nfcDataNotifier: widget.nfcDataNotifier,
+          )
+          .then((characterSaveData) => loadGame(characterSaveData));
     }
+  }
 
-    nfcDataNotifier
+  @override
+  void initState() {
+    widget.nfcDataNotifier
         .loadNfcSave(
           startNewGame: false,
           stopNfcSaveReading: stopNfcSaveReading,
-          nfcDataNotifier: nfcDataNotifier,
+          nfcDataNotifier: widget.nfcDataNotifier,
         )
         .then((characterSaveData) => loadGame(characterSaveData));
+    _listener = AppLifecycleListener(
+      onResume: () {
+        stopNfcSaveReading = Completer();
+        widget.nfcDataNotifier
+            .loadNfcSave(
+              startNewGame: false,
+              stopNfcSaveReading: stopNfcSaveReading,
+              nfcDataNotifier: widget.nfcDataNotifier,
+            )
+            .then((characterSaveData) => loadGame(characterSaveData));
+      },
+    );
+    super.initState();
+  }
 
+  @override
+  void dispose() {
+    _listener.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       child: Scaffold(

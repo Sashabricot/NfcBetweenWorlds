@@ -165,7 +165,7 @@ class TestGame extends FlameGame
       camera.viewport.add(_joystick!);
     });
 
-    level ??= 'first_map.tmx';
+    level ??= 'teleportation_map.tmx';
     await _loadLevel(level!);
 
     nfcDataNotifier.startNfcCardTypeScan();
@@ -225,7 +225,7 @@ class TestGame extends FlameGame
       'AdvancedDoor',
     );
     buttonDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('ButtonDoor');
-    // finalDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('FinalDoor');
+    finalDoorObjects = levelMap.tileMap.getLayer<ObjectGroup>('FinalDoor');
 
     groundObjects = levelMap.tileMap.getLayer<ObjectGroup>('GroundZone');
 
@@ -752,11 +752,7 @@ class TestGame extends FlameGame
 
       camera.follow(player, snap: true);
     } else if (nfcDataNotifier.shouldTeleportToSlimeHub) {
-      if (collectedItems.contains('BeginnerKey')) {
-        changeLevel('teleportation_map.tmx');
-      } else {
-        print('should have first key');
-      }
+      changeLevel('teleportation_map.tmx');
     } else if (nfcDataNotifier.shouldResetWorldValues) {
       changeLevel(level!);
     } else if (nfcDataNotifier.shouldReturnToMenu) {
