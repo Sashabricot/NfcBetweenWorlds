@@ -848,7 +848,6 @@ class TestGame extends FlameGame
         (MediaQuery.of(buildContext!).size.width / 2),
         MediaQuery.of(buildContext!).size.height * 0.1,
       );
-      // camera.viewport.remove(timerText!);
       timer!.position = timerPosition;
       camera.viewport.add(timer!);
     }

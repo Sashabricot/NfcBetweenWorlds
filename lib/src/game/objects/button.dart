@@ -72,7 +72,6 @@ class Button extends SpriteGroupComponent
         DateTime.now().subtract(Duration(milliseconds: 100)),
       )) {
         isPressed = false;
-
         buttonNotPressedAction();
         current = 'notPressed';
       }
