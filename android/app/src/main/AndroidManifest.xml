@@ -5,7 +5,7 @@
     <application
         
 
-        android:label="nfc_between_worlds"
+        android:label="NfcBetweenWorlds"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

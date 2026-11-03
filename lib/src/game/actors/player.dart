@@ -168,7 +168,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       SpriteAnimationData.sequenced(
         loop: true,
         amount: 6,
-        stepTime: 0.1,
+        stepTime: 0.12,
         texturePosition: Vector2(0, 0 * frameSize),
         textureSize: Vector2.all(64),
       ),
@@ -178,7 +178,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       SpriteAnimationData.sequenced(
         loop: true,
         amount: 6,
-        stepTime: 0.1,
+        stepTime: 0.12,
         texturePosition: Vector2(0, 1 * frameSize),
         textureSize: Vector2.all(64),
       ),
@@ -188,7 +188,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       SpriteAnimationData.sequenced(
         loop: true,
         amount: 6,
-        stepTime: 0.1,
+        stepTime: 0.12,
         texturePosition: Vector2(0, 2 * frameSize),
         textureSize: Vector2.all(64),
       ),
@@ -198,7 +198,7 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
       SpriteAnimationData.sequenced(
         loop: true,
         amount: 6,
-        stepTime: 0.1,
+        stepTime: 0.12,
         texturePosition: Vector2(0, 3 * frameSize),
         textureSize: Vector2.all(64),
       ),

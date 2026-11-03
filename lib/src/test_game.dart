@@ -115,6 +115,7 @@ class TestGame extends FlameGame
       'Slime1_Idle_body.png',
       'Slime2_Idle_body.png',
       'Slime3_Idle_body.png',
+      'Slime4_Idle_body.png',
       'joystick.png',
       'key.png',
       'box.png',
@@ -722,6 +723,20 @@ class TestGame extends FlameGame
 
   bool isPlayerInBlockedZone(Vector2 position) {
     return blockedZone.any((zone) => zone.containsPoint(position));
+  }
+
+  void _giveAirSlime() {
+    final playerState = player.playerState;
+    final position = player.position;
+    slimeImage = 'Slime4_Idle_body.png';
+    world.remove(player);
+    player = Player(
+      playerState: playerState,
+      isBlocked: false,
+      slimeImage: slimeImage,
+      position: position,
+    );
+    world.add(player);
   }
 
   void _updateWorldFromNFC() {

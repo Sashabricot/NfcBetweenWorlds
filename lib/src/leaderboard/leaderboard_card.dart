@@ -53,15 +53,18 @@ class LeaderboardCard extends StatelessWidget {
                     fontWeight: .w400,
                   ),
                 ),
-          title: Text(
-            record.name,
-            maxLines: 1,
-            overflow: .ellipsis,
-            style: TextStyle(
-              color: Colors.black,
-              fontFamily: 'Pixel',
-              fontWeight: .w400,
-              fontSize: 10,
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              record.name,
+              // maxLines: 1,
+              // overflow: .ellipsis,
+              style: TextStyle(
+                color: Colors.black,
+                fontFamily: 'Pixel',
+                fontWeight: .w400,
+                fontSize: 10,
+              ),
             ),
           ),
           trailing: Row(
