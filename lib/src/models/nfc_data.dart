@@ -48,11 +48,14 @@ class NfcData {
               shouldReturnToMenu = true;
             case 'c:n':
               characterName = utf8.decode(record.payload);
+            case 'g:c':
+              gameCheat = utf8.decode(record.payload);
           }
         }
       }
     }
   }
+
   String? characterName;
   bool? shouldReturnToMenu;
   bool? shouldTeleportToSlimeHub;
@@ -65,6 +68,7 @@ class NfcData {
   String? characterLevel;
   List<String> boxesPosition = [];
   int? playerTimer = 0;
+  String? gameCheat;
 
   String _getType(NdefRecord record) {
     switch (record.typeNameFormat) {

@@ -29,7 +29,7 @@ class _PlayerFormState extends State<PlayerForm> {
     if (!isValid!) {
       return;
     }
-    widget.characterSaveData['characterName'] = playerName;
+    widget.characterSaveData['characterName'] = playerName.replaceAll(' ', '');
     widget.initGame(widget.characterSaveData);
   }
 

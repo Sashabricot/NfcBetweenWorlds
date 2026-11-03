@@ -519,7 +519,7 @@ class TestGame extends FlameGame
 
   void _incrementActionedButton() {
     actionedButtonsNumber += 1;
-    if (actionedButtonsNumber == 2) {
+    if (actionedButtonsNumber >= 2) {
       finalDoor!.toggleDoor();
     }
   }
@@ -765,6 +765,19 @@ class TestGame extends FlameGame
           ),
         ),
       );
+    } else if (nfcDataNotifier.items.isNotEmpty) {
+      for (var item in nfcDataNotifier.items) {
+        if (!collectedItems.contains(item)) {
+          collectedItems.add(item);
+        }
+      }
+      changeLevel(level!);
+    } else if (nfcDataNotifier.gameCheat != null) {
+      if (nfcDataNotifier.gameCheat! == '0') {
+        if (finalDoor != null) {
+          finalDoor!.toggleDoor();
+        }
+      }
     }
   }
 

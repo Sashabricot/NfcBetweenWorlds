@@ -13,12 +13,14 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 class NfcDataNotifier extends ChangeNotifier {
   final Map<String, NfcData> _nfcTags = {};
 
+  String? gameCheat;
   String _nfcType = '';
   Uint8List _nfcUtf8Type = utf8.encode('2');
   NfcData _latestNfcData = NfcData(
     ndefMessage: NdefMessage(records: []),
     uid: '',
   );
+  List<String> items = [];
   bool shouldResetWorldValues = false;
   bool isProcessing = false;
   bool shouldUpdate = false;
@@ -239,6 +241,19 @@ class NfcDataNotifier extends ChangeNotifier {
         notifyListeners();
         shouldUpdate = true;
         shouldReturnToMenu = false;
+      } else if (newNfc.characterItems.isNotEmpty &&
+          newNfc.characterPosition == null) {
+        shouldUpdate = false;
+        items.addAll(newNfc.characterItems);
+        notifyListeners();
+        items = [];
+        shouldUpdate = true;
+      } else if (newNfc.gameCheat != null) {
+        shouldUpdate = false;
+        gameCheat = newNfc.gameCheat!;
+        notifyListeners();
+        gameCheat = null;
+        shouldUpdate = true;
       } else if (_latestNfcData.uid != newNfc.uid) {
         if (newNfc.slimeType != null && newNfc.characterPosition == null) {
           switch (newNfc.slimeType) {
@@ -258,6 +273,7 @@ class NfcDataNotifier extends ChangeNotifier {
           }
         }
       }
+
       _latestNfcData = newNfc;
     } catch (e) {
       throw Exception(e);
