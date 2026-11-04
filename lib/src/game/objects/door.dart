@@ -11,6 +11,7 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
   final Vector2 doorHitboxSize = Vector2(64, 8);
   final String keyItemString;
   RectangleHitbox? hitBox;
+  bool hitboxLoaded = false;
   @override
   FutureOr<void> onLoad() {
     hitBox = RectangleHitbox(
@@ -19,18 +20,23 @@ class Door extends SpriteAnimationComponent with HasGameReference<TestGame> {
       position: Vector2(0, doorSize.y - doorHitboxSize.y),
     );
     add(hitBox!);
+    hitboxLoaded = true;
     return super.onLoad();
   }
 
   @override
   void onMount() {
-    remove(hitBox!);
+    if (hitboxLoaded) {
+      remove(hitBox!);
+      hitboxLoaded = false;
+    }
 
     int amount = 1;
     if (game.collectedItems.contains(keyItemString)) {
       amount = 6;
     } else {
       add(hitBox!);
+      hitboxLoaded = true;
     }
     animation = SpriteAnimation.fromFrameData(
       game.images.fromCache('DoubleDoor1.png'),

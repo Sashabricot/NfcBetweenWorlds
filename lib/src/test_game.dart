@@ -88,6 +88,7 @@ class TestGame extends FlameGame
   ObjectGroup? finalButtonObjects;
   ObjectGroup? decorationsObjects;
   ObjectGroup? congratulationsTeleporter;
+  ObjectGroup? easterEgg;
 
   PositionComponent? timer;
   PositionComponent? landLayer;
@@ -253,6 +254,8 @@ class TestGame extends FlameGame
     doorButtonObjects = levelMap.tileMap.getLayer<ObjectGroup>('DoorButton');
     finalButtonObjects = levelMap.tileMap.getLayer<ObjectGroup>('FinalButton');
     decorationsObjects = levelMap.tileMap.getLayer<ObjectGroup>('Decorations');
+
+    easterEgg = levelMap.tileMap.getLayer<ObjectGroup>('EasterEgg');
 
     boxItems = levelMap.tileMap.getLayer<ObjectGroup>('Box');
     keyItem = levelMap.tileMap.getLayer<ObjectGroup>(worldKey);
@@ -436,8 +439,11 @@ class TestGame extends FlameGame
       waterBridgesLayer!.priority = 2;
       world.add(waterBridgesLayer!);
     }
-
-    player.priority = 3;
+    if (slimeImage == 'Slime4_Idle_body.png') {
+      player.priority = 9999;
+    } else {
+      player.priority = 3;
+    }
 
     world.add(player);
     camera.follow(player, snap: true);
@@ -511,6 +517,18 @@ class TestGame extends FlameGame
             position: Vector2(element.x, element.y),
             buttonPressedAction: _incrementActionedButton,
             buttonNotPressedAction: _decrementActionedButton,
+          )..priority = 2,
+        );
+        world.add(_buttons.last);
+      }
+    }
+    if (easterEgg != null) {
+      for (var element in easterEgg!.objects) {
+        _buttons.add(
+          Button(
+            position: Vector2(element.x, element.y),
+            buttonPressedAction: _giveAirSlime,
+            buttonNotPressedAction: () {},
           )..priority = 2,
         );
         world.add(_buttons.last);
@@ -685,24 +703,26 @@ class TestGame extends FlameGame
   }
 
   void _loadWalkingType() {
-    switch (slimeType) {
-      case 'Land':
-        addBlockedZone(waterObjects);
-        if (removeLavaWalls == false) {
-          addBlockedZone(lavaObjects);
-        }
-        slimeImage = 'Slime1_Idle_body.png';
-      case 'Water':
-        addBlockedZone(landObjects);
-        if (removeLavaWalls == false) {
-          addBlockedZone(lavaObjects);
-        }
-        addBlockedZone(groundObjects);
-        slimeImage = 'Slime2_Idle_body.png';
-      case 'Lava':
-        addBlockedZone(waterObjects);
-        addBlockedZone(landObjects);
-        slimeImage = 'Slime3_Idle_body.png';
+    if (slimeImage != 'Slime4_Idle_body.png') {
+      switch (slimeType) {
+        case 'Land':
+          addBlockedZone(waterObjects);
+          if (removeLavaWalls == false) {
+            addBlockedZone(lavaObjects);
+          }
+          slimeImage = 'Slime1_Idle_body.png';
+        case 'Water':
+          addBlockedZone(landObjects);
+          if (removeLavaWalls == false) {
+            addBlockedZone(lavaObjects);
+          }
+          addBlockedZone(groundObjects);
+          slimeImage = 'Slime2_Idle_body.png';
+        case 'Lava':
+          addBlockedZone(waterObjects);
+          addBlockedZone(landObjects);
+          slimeImage = 'Slime3_Idle_body.png';
+      }
     }
   }
 
@@ -735,8 +755,11 @@ class TestGame extends FlameGame
       isBlocked: false,
       slimeImage: slimeImage,
       position: position,
+      joystick: _joystick,
     );
+    player.priority = 9999;
     world.add(player);
+    camera.follow(player, snap: true);
   }
 
   void _updateWorldFromNFC() {
@@ -750,6 +773,7 @@ class TestGame extends FlameGame
 
       blockedZone = [];
       slimeType = nfcDataNotifier.nfcType;
+      slimeImage = '';
       world.remove(player);
       _loadWalkingType();
 
@@ -786,7 +810,10 @@ class TestGame extends FlameGame
           collectedItems.add(item);
         }
       }
-      changeLevel(level!);
+      for (var door in doors) {
+        world.remove(door);
+        world.add(door);
+      }
     } else if (nfcDataNotifier.gameCheat != null) {
       if (nfcDataNotifier.gameCheat! == '0') {
         if (finalDoor != null) {

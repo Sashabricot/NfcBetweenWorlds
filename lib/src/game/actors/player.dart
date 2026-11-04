@@ -130,17 +130,19 @@ class Player extends SpriteAnimationGroupComponent<PlayerState>
         other is BoxItem ||
         other is Door ||
         other is ActionableDoor) {
-      if (intersectionPoints.length == 2) {
-        final mid =
-            (intersectionPoints.elementAt(0) +
-                intersectionPoints.elementAt(1)) /
-            2;
-        final collisionNormal = absoluteCenter - mid;
+      if (slimeImage != 'Slime4_Idle_body.png') {
+        if (intersectionPoints.length == 2) {
+          final mid =
+              (intersectionPoints.elementAt(0) +
+                  intersectionPoints.elementAt(1)) /
+              2;
+          final collisionNormal = absoluteCenter - mid;
 
-        final separationDistance = hitBoxSize - collisionNormal.length;
-        collisionNormal.normalize();
+          final separationDistance = hitBoxSize - collisionNormal.length;
+          collisionNormal.normalize();
 
-        position += collisionNormal.scaled(separationDistance);
+          position += collisionNormal.scaled(separationDistance);
+        }
       }
     }
     super.onCollision(intersectionPoints, other);

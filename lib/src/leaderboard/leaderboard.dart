@@ -16,7 +16,12 @@ class Leaderboard extends StatelessWidget {
       (record, record2) => record.time.compareTo(record2.time),
     );
     return Container(
-      padding: .only(top: 180, left: 60, right: 60, bottom: 120),
+      padding: .only(
+        top: MediaQuery.of(context).size.height * 0.18,
+        left: 60,
+        right: 60,
+        bottom: MediaQuery.of(context).size.height * 0.10,
+      ),
       decoration: BoxDecoration(
         image: DecorationImage(
           filterQuality: .none,
