@@ -722,6 +722,8 @@ class TestGame extends FlameGame
           addBlockedZone(waterObjects);
           addBlockedZone(landObjects);
           slimeImage = 'Slime3_Idle_body.png';
+        case 'Air':
+          slimeImage = 'Slime4_Idle_body.png';
       }
     }
   }
@@ -749,6 +751,7 @@ class TestGame extends FlameGame
     final playerState = player.playerState;
     final position = player.position;
     slimeImage = 'Slime4_Idle_body.png';
+    nfcDataNotifier.giveAirSlime();
     world.remove(player);
     player = Player(
       playerState: playerState,
@@ -760,6 +763,10 @@ class TestGame extends FlameGame
     player.priority = 9999;
     world.add(player);
     camera.follow(player, snap: true);
+
+    if (!collectedItems.contains('EasterEgg')) {
+      collectedItems.add('EasterEgg');
+    }
   }
 
   void _updateWorldFromNFC() {

@@ -33,6 +33,8 @@ class NfcData {
                   characterItems.add('IntermediateKey');
                 case '2':
                   characterItems.add('AdvancedKey');
+                case '3':
+                  characterItems.add('EasterEgg');
               }
             case 'w:r':
               shouldResetWorldValues = true;

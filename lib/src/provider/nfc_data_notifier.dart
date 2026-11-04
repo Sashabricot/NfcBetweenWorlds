@@ -11,8 +11,6 @@ import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 class NfcDataNotifier extends ChangeNotifier {
-  final Map<String, NfcData> _nfcTags = {};
-
   String? gameCheat;
   String _nfcType = '';
   Uint8List _nfcUtf8Type = utf8.encode('2');
@@ -29,7 +27,6 @@ class NfcDataNotifier extends ChangeNotifier {
   Exception? error;
   String nfcSaveMessage = '';
 
-  Map<String, NfcData> get nfcTags => _nfcTags;
   NfcData get latestNfcData => _latestNfcData;
 
   String get nfcType => _nfcType;
@@ -126,6 +123,8 @@ class NfcDataNotifier extends ChangeNotifier {
             itemUtf8 = utf8.encode('1');
           case 'AdvancedKey':
             itemUtf8 = utf8.encode('2');
+          case 'EasterEgg':
+            itemUtf8 = utf8.encode('3');
         }
         if (itemUtf8 != null) {
           saveData.records.add(
@@ -213,13 +212,8 @@ class NfcDataNotifier extends ChangeNotifier {
         nfcUid = '';
       }
 
-      if (_nfcTags[nfcUid] == null) {
-        newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
+      newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
 
-        _nfcTags[nfcUid] = newNfc;
-      } else {
-        newNfc = _nfcTags[nfcUid]!;
-      }
       if (newNfc.shouldTeleportToSlimeHub != null &&
           newNfc.shouldTeleportToSlimeHub!) {
         shouldUpdate = false;
@@ -269,8 +263,16 @@ class NfcDataNotifier extends ChangeNotifier {
               _nfcUtf8Type = newNfc.slimeType!;
               _nfcType = 'Lava';
               notifyListeners();
+            case [51]:
+              _nfcUtf8Type = newNfc.slimeType!;
+              _nfcType = 'Air';
+              notifyListeners();
             default:
           }
+        } else if (newNfc.characterItems.contains('EasterEgg')) {
+          _nfcUtf8Type = utf8.encode('3');
+          _nfcType = 'Air';
+          notifyListeners();
         }
       }
 
@@ -336,7 +338,7 @@ class NfcDataNotifier extends ChangeNotifier {
       }
 
       newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
-      _nfcTags[nfcUid] = newNfc;
+
       String? nfcSavedType;
 
       if (newNfc.slimeType != null) {
@@ -350,6 +352,9 @@ class NfcDataNotifier extends ChangeNotifier {
           case [48]:
             _nfcUtf8Type = newNfc.slimeType!;
             _nfcType = 'Lava';
+          case [51]:
+            _nfcUtf8Type = newNfc.slimeType!;
+            _nfcType = 'Air';
           default:
         }
         nfcSavedType = _nfcType;
@@ -446,5 +451,10 @@ class NfcDataNotifier extends ChangeNotifier {
     } else {
       return '';
     }
+  }
+
+  void giveAirSlime() {
+    _nfcUtf8Type = utf8.encode('3');
+    _nfcType = 'Air';
   }
 }
