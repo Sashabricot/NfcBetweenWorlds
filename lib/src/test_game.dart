@@ -42,8 +42,8 @@ class TestGame extends FlameGame
   List<Vector2> savedBoxesPosition;
   String? level;
   final NfcDataNotifier nfcDataNotifier;
-  String walkingType = '';
-  String slimeImage = '';
+  String walkingType = 'Land';
+  String slimeImage = 'Slime1_Idle_body.png';
   List<String> collectedItems = [];
   String worldKey = '';
   List<String>? characterItems;

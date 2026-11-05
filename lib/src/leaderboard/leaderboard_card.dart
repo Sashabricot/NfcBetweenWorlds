@@ -81,7 +81,7 @@ class LeaderboardCard extends StatelessWidget {
                 child: FittedBox(
                   fit: .contain,
                   child: Text(
-                    '${minutes.truncate()}:${tenthSeconds.truncate()}$seconds',
+                    '${minutes.truncate() < 10 ? '0' : ''}${minutes.truncate()}:${tenthSeconds.truncate()}$seconds',
 
                     style: TextStyle(
                       color: Colors.black,
