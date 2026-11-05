@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class PlayerForm extends StatefulWidget {
-  const PlayerForm({
+  PlayerForm({
     super.key,
     required this.initGame,
     required this.characterSaveData,
@@ -10,33 +10,36 @@ class PlayerForm extends StatefulWidget {
   final Function initGame;
   final Map<String, dynamic> characterSaveData;
 
+  final _form = GlobalKey<FormState>();
+  final _textController = TextEditingController();
+
+  void saveForm() {
+    final isValid = _form.currentState?.validate();
+    if (!isValid!) {
+      return;
+    }
+    characterSaveData['characterName'] = _textController.text.replaceAll(
+      ' ',
+      '',
+    );
+    initGame(characterSaveData);
+  }
+
   @override
   State<PlayerForm> createState() => _PlayerFormState();
 }
 
 class _PlayerFormState extends State<PlayerForm> {
-  final _form = GlobalKey<FormState>();
-  final _textController = TextEditingController();
-
   @override
   void dispose() {
-    _textController.dispose();
+    widget._textController.dispose();
     super.dispose();
-  }
-
-  void _saveForm(String playerName) {
-    final isValid = _form.currentState?.validate();
-    if (!isValid!) {
-      return;
-    }
-    widget.characterSaveData['characterName'] = playerName.replaceAll(' ', '');
-    widget.initGame(widget.characterSaveData);
   }
 
   @override
   Widget build(BuildContext context) {
     return Form(
-      key: _form,
+      key: widget._form,
       child: TextFormField(
         // autofocus: true,
         validator: (value) {
@@ -48,7 +51,7 @@ class _PlayerFormState extends State<PlayerForm> {
           }
           return null;
         },
-        onFieldSubmitted: (value) => _saveForm(value),
+        onFieldSubmitted: (value) => widget.saveForm(),
       ),
     );
   }

@@ -64,6 +64,10 @@ class _MainMenuState extends State<MainMenu> {
   Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
     if (widget.nfcDataNotifier.error == null && characterSaveData != null) {
       if (characterSaveData['characterName'] == null) {
+        final playerForm = PlayerForm(
+          initGame: initGame,
+          characterSaveData: characterSaveData,
+        );
         showDialog(
           barrierDismissible: false,
           context: context,
@@ -73,10 +77,7 @@ class _MainMenuState extends State<MainMenu> {
               title: Text('Choisissez un nom de joueur'),
               content: SizedBox(
                 height: 64,
-                child: PlayerForm(
-                  initGame: initGame,
-                  characterSaveData: characterSaveData,
-                ),
+                child: playerForm
               ),
               actions: <Widget>[
                 TextButton(
@@ -94,6 +95,13 @@ class _MainMenuState extends State<MainMenu> {
                         );
                   },
                   child: Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    
+                    playerForm.saveForm();
+                  },
+                  child: Text('Confirmer'),
                 ),
               ],
             ),
@@ -137,8 +145,6 @@ class _MainMenuState extends State<MainMenu> {
     );
     super.initState();
   }
-
-  
 
   @override
   void dispose() {

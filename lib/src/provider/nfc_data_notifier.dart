@@ -456,5 +456,9 @@ class NfcDataNotifier extends ChangeNotifier {
   void giveAirSlime() {
     _nfcUtf8Type = utf8.encode('3');
     _nfcType = 'Air';
+    _latestNfcData = NfcData(
+      ndefMessage: NdefMessage(records: []),
+      uid: '',
+    );
   }
 }

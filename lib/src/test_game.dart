@@ -703,28 +703,26 @@ class TestGame extends FlameGame
   }
 
   void _loadWalkingType() {
-    if (slimeImage != 'Slime4_Idle_body.png') {
-      switch (slimeType) {
-        case 'Land':
-          addBlockedZone(waterObjects);
-          if (removeLavaWalls == false) {
-            addBlockedZone(lavaObjects);
-          }
-          slimeImage = 'Slime1_Idle_body.png';
-        case 'Water':
-          addBlockedZone(landObjects);
-          if (removeLavaWalls == false) {
-            addBlockedZone(lavaObjects);
-          }
-          addBlockedZone(groundObjects);
-          slimeImage = 'Slime2_Idle_body.png';
-        case 'Lava':
-          addBlockedZone(waterObjects);
-          addBlockedZone(landObjects);
-          slimeImage = 'Slime3_Idle_body.png';
-        case 'Air':
-          slimeImage = 'Slime4_Idle_body.png';
-      }
+    switch (slimeType) {
+      case 'Land':
+        addBlockedZone(waterObjects);
+        if (removeLavaWalls == false) {
+          addBlockedZone(lavaObjects);
+        }
+        slimeImage = 'Slime1_Idle_body.png';
+      case 'Water':
+        addBlockedZone(landObjects);
+        if (removeLavaWalls == false) {
+          addBlockedZone(lavaObjects);
+        }
+        addBlockedZone(groundObjects);
+        slimeImage = 'Slime2_Idle_body.png';
+      case 'Lava':
+        addBlockedZone(waterObjects);
+        addBlockedZone(landObjects);
+        slimeImage = 'Slime3_Idle_body.png';
+      case 'Air':
+        slimeImage = 'Slime4_Idle_body.png';
     }
   }
 
@@ -748,11 +746,19 @@ class TestGame extends FlameGame
   }
 
   void _giveAirSlime() {
+    for (PositionComponent zone in blockedZone) {
+      world.remove(zone);
+    }
+
     final playerState = player.playerState;
     final position = player.position;
-    slimeImage = 'Slime4_Idle_body.png';
+
+    blockedZone = [];
     nfcDataNotifier.giveAirSlime();
+    slimeType = nfcDataNotifier.nfcType;
+    slimeImage = '';
     world.remove(player);
+    _loadWalkingType();
     player = Player(
       playerState: playerState,
       isBlocked: false,
