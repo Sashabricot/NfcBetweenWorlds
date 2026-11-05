@@ -41,7 +41,7 @@ class _PlayerFormState extends State<PlayerForm> {
     return Form(
       key: widget._form,
       child: TextFormField(
-        // autofocus: true,
+        controller: widget._textController,
         validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Veuillez entrer votre nom de joueur';
