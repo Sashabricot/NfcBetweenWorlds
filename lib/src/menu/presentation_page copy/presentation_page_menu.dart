@@ -1,0 +1,43 @@
+import 'package:flutter/material.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/nfc_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/tiled_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/presentation_page_button.dart';
+
+class PresentationPageMenu extends StatelessWidget {
+  const PresentationPageMenu({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: Text(
+          'NFC BW - Dossier Visuel',
+          style: TextStyle(fontWeight: .bold),
+        ),
+        backgroundColor: Colors.white,
+      ),
+      backgroundColor: Colors.white,
+      body: SizedBox.expand(
+        child: Padding(
+          padding: .symmetric(vertical: 36, horizontal: 24),
+          child: Column(
+            mainAxisSize: .max,
+            crossAxisAlignment: .center,
+            children: [
+              PresentationPageButton(
+                widget: NfcPage(),
+                text: 'Chapitre 1 - NFC',
+              ),
+              SizedBox(height: 8),
+              PresentationPageButton(
+                widget: TiledPage(),
+                text: 'Chapitre 2 - Tiled et images',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

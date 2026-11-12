@@ -5,10 +5,10 @@ import 'package:flame/components.dart';
 import 'package:flame/particles.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class Teleporter extends PositionComponent
-    with CollisionCallbacks, HasGameReference<TestGame> {
+    with CollisionCallbacks, HasGameReference<NfcBetweenWorlds> {
   Teleporter(this.level) : super();
   final String level;
   bool hasChanged = false;

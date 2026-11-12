@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class ActionableDoor extends SpriteAnimationGroupComponent
-    with HasGameReference<TestGame> {
+    with HasGameReference<NfcBetweenWorlds> {
   ActionableDoor() : super(anchor: .bottomCenter);
   final Vector2 doorSpriteSize = Vector2.all(64);
   final Vector2 doorSize = Vector2(64, 64);

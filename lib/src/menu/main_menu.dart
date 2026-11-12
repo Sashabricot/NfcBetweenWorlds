@@ -4,11 +4,12 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/leaderboard/leaderboard.dart';
 import 'package:nfc_between_worlds/src/menu/player_form.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/presentation_page_menu.dart';
 
 import 'package:nfc_between_worlds/src/overlays/pause_button.dart';
 import 'package:nfc_between_worlds/src/overlays/save_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class MainMenu extends StatefulWidget {
   const MainMenu({super.key, required this.nfcDataNotifier});
@@ -27,9 +28,9 @@ class _MainMenuState extends State<MainMenu> {
       MaterialPageRoute(
         builder: (context) => PopScope(
           canPop: false,
-          child: GameWidget<TestGame>.controlled(
+          child: GameWidget<NfcBetweenWorlds>.controlled(
             gameFactory: () {
-              return TestGame(
+              return NfcBetweenWorlds(
                 characterName: characterSaveData['characterName'] ??= 'test',
                 nfcDataNotifier: widget.nfcDataNotifier,
                 characterPosition: characterSaveData['characterPosition'],
@@ -75,10 +76,7 @@ class _MainMenuState extends State<MainMenu> {
             canPop: false,
             child: AlertDialog(
               title: Text('Choisissez un nom de joueur'),
-              content: SizedBox(
-                height: 64,
-                child: playerForm
-              ),
+              content: SizedBox(height: 64, child: playerForm),
               actions: <Widget>[
                 TextButton(
                   onPressed: () async {
@@ -98,7 +96,6 @@ class _MainMenuState extends State<MainMenu> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    
                     playerForm.saveForm();
                   },
                   child: Text('Confirmer'),
@@ -197,11 +194,33 @@ class _MainMenuState extends State<MainMenu> {
               child: Leaderboard(),
             ),
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.65,
+              bottom: MediaQuery.of(context).size.height * 0.1,
+              right: MediaQuery.of(context).size.width * 0.1,
               child: Center(
-                child: Column(crossAxisAlignment: .center, children: [
-              
-                  ],
+                child: Container(
+                  decoration: BoxDecoration(
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        offset: Offset(3.0, 3.0),
+                        blurRadius: 3.0,
+                        color: Color.fromARGB(255, 0, 0, 0),
+                      ),
+                    ],
+                    color: Colors.grey,
+                    border: Border.all(color: Colors.black),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    color: Colors.black,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => PresentationPageMenu(),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.folder),
+                  ),
                 ),
               ),
             ),

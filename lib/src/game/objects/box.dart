@@ -5,10 +5,10 @@ import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/objects/actionable_door.dart';
 import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class BoxItem extends SpriteComponent
-    with CollisionCallbacks, HasGameReference<TestGame> {
+    with CollisionCallbacks, HasGameReference<NfcBetweenWorlds> {
   BoxItem({required super.position})
     : super(anchor: Anchor.center, size: Vector2.all(32));
   final Vector2 hitBoxSize = Vector2.all(32);

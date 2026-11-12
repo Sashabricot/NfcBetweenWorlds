@@ -4,9 +4,9 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/widgets.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
-class KeyItem extends SpriteComponent with HasGameReference<TestGame> {
+class KeyItem extends SpriteComponent with HasGameReference<NfcBetweenWorlds> {
   KeyItem({required super.position})
     : super(size: Vector2.all(16), anchor: .center);
   final Vector2 hitBoxSize = Vector2.all(16);

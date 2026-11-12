@@ -23,9 +23,9 @@ import 'package:nfc_between_worlds/src/menu/main_menu.dart';
 import 'package:nfc_between_worlds/src/models/leaderboard_record.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
-class TestGame extends FlameGame
+class NfcBetweenWorlds extends FlameGame
     with HasCollisionDetection, WidgetsBindingObserver {
-  TestGame({
+  NfcBetweenWorlds({
     required this.nfcDataNotifier,
     this.characterPosition,
     this.slimeType,
@@ -261,6 +261,9 @@ class TestGame extends FlameGame
     keyItem = levelMap.tileMap.getLayer<ObjectGroup>(worldKey);
 
     slimeType ??= 'Land';
+    if (slimeType!.isEmpty) {
+      slimeType = 'Land';
+    }
 
     _loadWalkingType();
 

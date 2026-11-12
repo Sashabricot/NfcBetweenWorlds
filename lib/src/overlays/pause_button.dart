@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/constants/styled_button.dart';
 import 'package:nfc_between_worlds/src/menu/main_menu.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class PauseButton extends StatelessWidget {
   const PauseButton({
@@ -13,7 +13,7 @@ class PauseButton extends StatelessWidget {
   });
 
   final NfcDataNotifier nfcDataNotifier;
-  final TestGame game;
+  final NfcBetweenWorlds game;
 
   @override
   Widget build(BuildContext context) {

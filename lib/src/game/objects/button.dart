@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:nfc_between_worlds/src/game/actors/player.dart';
 import 'package:nfc_between_worlds/src/game/objects/box.dart';
 
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class Button extends SpriteGroupComponent
-    with CollisionCallbacks, HasGameReference<TestGame> {
+    with CollisionCallbacks, HasGameReference<NfcBetweenWorlds> {
   Button({
     required super.position,
     required this.buttonPressedAction,

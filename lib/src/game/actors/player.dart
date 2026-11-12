@@ -9,10 +9,10 @@ import 'package:nfc_between_worlds/src/game/objects/door.dart';
 import 'package:nfc_between_worlds/src/game/objects/ground.dart';
 import 'package:nfc_between_worlds/src/game/objects/key.dart';
 import 'package:nfc_between_worlds/src/game/objects/wall.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class Player extends SpriteAnimationGroupComponent<PlayerState>
-    with CollisionCallbacks, HasGameReference<TestGame> {
+    with CollisionCallbacks, HasGameReference<NfcBetweenWorlds> {
   Player({
     required this.playerState,
     required this.isBlocked,

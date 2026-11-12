@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:nfc_between_worlds/src/test_game.dart';
+import 'package:nfc_between_worlds/src/game/nfc_between_worlds.dart';
 
 class TimerPositionComponent extends PositionComponent
-    with HasGameReference<TestGame> {
+    with HasGameReference<NfcBetweenWorlds> {
   TimerPositionComponent() : super(anchor: .center, size: Vector2(64, 64));
 
   TextComponent textComponent = TextComponent(
