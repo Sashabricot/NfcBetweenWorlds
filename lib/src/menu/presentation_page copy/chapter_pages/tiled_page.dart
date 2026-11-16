@@ -49,6 +49,20 @@ class TiledPage extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 StyledText(
+                  'Il a donc fallu également créer et ajouter des décorations.',
+                ),
+                SizedBox(height: 16),
+                ImageSlider(
+                  images: [
+                    'button.png',
+                    'Grass/3.png',
+                    'Grass/10.png',
+                    'IceDecorations/Grass/3.png',
+                    'IceDecorations/Grass/10.png',
+                  ],
+                ),
+                SizedBox(height: 16),
+                StyledText(
                   "Il ne manque donc plus qu'un seul élément à notre set, l'air. J'ai donc créé des tuiles de nuage ainsi qu'un personnage caché sous forme d'Easter Egg.",
                 ),
                 SizedBox(height: 16),

@@ -36,6 +36,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/presentation/
+    - assets/images/presentation/Grass/
+    - assets/images/presentation/IceDecorations/Grass/
     - assets/tiles/
     - assets/images/Grass/
     - assets/images/IceDecorations/Grass/
