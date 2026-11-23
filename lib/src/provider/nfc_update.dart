@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_state.dart';
 import 'package:nfc_manager/ndef_record.dart';
@@ -11,6 +12,7 @@ import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 class NfcUpdate {
+  final _user = FirebaseAuth.instance.currentUser;
   NfcDataState _state = NfcDataState(
     shouldResetWorldValues: false,
     shouldReturnToMenu: false,
@@ -71,9 +73,9 @@ class NfcUpdate {
           shouldTeleportToSlimeHub: true,
           latestNfcData: newNfc,
         );
-        if (updateDatabase) {
+        if (updateDatabase && _user != null) {
           FirebaseFirestore.instance
-              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .collection('nfc/${_user.uid}/commands')
               .add({'createdAt': DateTime.now(), 'teleport': true});
         }
       } else if (newNfc.shouldResetWorldValues != null &&
@@ -82,9 +84,9 @@ class NfcUpdate {
           shouldResetWorldValues: true,
           latestNfcData: newNfc,
         );
-        if (updateDatabase) {
+        if (updateDatabase && _user != null) {
           FirebaseFirestore.instance
-              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .collection('nfc/${_user.uid}/commands')
               .add({'createdAt': DateTime.now(), 'reset': true});
         }
       } else if (newNfc.shouldReturnToMenu != null &&
@@ -93,9 +95,9 @@ class NfcUpdate {
           shouldReturnToMenu: true,
           latestNfcData: newNfc,
         );
-        if (updateDatabase) {
+        if (updateDatabase && _user != null) {
           FirebaseFirestore.instance
-              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .collection('nfc/${_user.uid}/commands')
               .add({'createdAt': DateTime.now(), 'menu': true});
         }
       } else if (newNfc.characterItems.isNotEmpty &&
@@ -104,9 +106,9 @@ class NfcUpdate {
           items: [...newNfc.characterItems],
           latestNfcData: newNfc,
         );
-        if (updateDatabase) {
+        if (updateDatabase && _user != null) {
           FirebaseFirestore.instance
-              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .collection('nfc/${_user.uid}/commands')
               .add({
                 'createdAt': DateTime.now(),
                 'updateItems': true,
@@ -118,9 +120,9 @@ class NfcUpdate {
           gameCheat: newNfc.gameCheat,
           latestNfcData: newNfc,
         );
-        if (updateDatabase) {
+        if (updateDatabase && _user != null) {
           FirebaseFirestore.instance
-              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .collection('nfc/${_user.uid}/commands')
               .add({
                 'createdAt': DateTime.now(),
                 'cheat': true,
@@ -165,9 +167,9 @@ class NfcUpdate {
             default:
           }
 
-          if (updateDatabase) {
+          if (updateDatabase && _user != null) {
             FirebaseFirestore.instance
-                .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+                .collection('nfc/${_user.uid}/commands')
                 .add({
                   'createdAt': DateTime.now(),
                   'update': true,
@@ -181,9 +183,9 @@ class NfcUpdate {
             shouldUpdate: true,
             latestNfcData: newNfc,
           );
-          if (updateDatabase) {
+          if (updateDatabase && _user != null) {
             FirebaseFirestore.instance
-                .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+                .collection('nfc/${_user.uid}/commands')
                 .add({
                   'createdAt': DateTime.now(),
                   'update': true,

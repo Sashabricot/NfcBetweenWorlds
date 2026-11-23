@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
@@ -15,27 +16,29 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 class NfcDataNotifier extends ChangeNotifier {
   final NfcUpdate _nfcUpdate = NfcUpdate();
-
+  final _user = FirebaseAuth.instance.currentUser;
   NfcDataNotifier() {
     _nfcUpdate.nfcDataStateStream.listen((state) {
       _state = state;
       notifyListeners();
     });
-    FirebaseFirestore.instance
-        .collection('nfc/953WxSNs91xEMWe6u9US/commands')
-        .get()
-        .then((snapshot) {
-          for (DocumentSnapshot ds in snapshot.docs) {
-            ds.reference.delete();
-          }
-        });
-    FirebaseFirestore.instance
-        .collection('nfc/953WxSNs91xEMWe6u9US/commands')
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .listen((dataSnapshot) {
-          _processCommandSnapshot(dataSnapshot);
-        });
+    if (_user != null) {
+      FirebaseFirestore.instance
+          .collection('nfc/${_user.uid}/commands')
+          .get()
+          .then((snapshot) {
+            for (DocumentSnapshot ds in snapshot.docs) {
+              ds.reference.delete();
+            }
+          });
+      FirebaseFirestore.instance
+          .collection('nfc/${_user.uid}/commands')
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .listen((dataSnapshot) {
+            _processCommandSnapshot(dataSnapshot);
+          });
+    }
   }
 
   NfcDataState _state = NfcDataState(
@@ -59,42 +62,45 @@ class NfcDataNotifier extends ChangeNotifier {
     QuerySnapshot<Map<String, dynamic>> commandSnapshot,
   ) {
     if (commandSnapshot.docs.isNotEmpty) {
-      final command = commandSnapshot.docs.first;
-      if (command['update'] != null) {
-        Uint8List utf8type = utf8.encode('');
-        switch (command['type']) {
-          case 'Land':
-            utf8type = utf8.encode('0');
-          case 'Water':
-            utf8type = utf8.encode('1');
-          case 'Lava':
-            utf8type = utf8.encode('2');
-          case 'Air':
-            utf8type = utf8.encode('3');
+      final command =
+          commandSnapshot.docs.first.data() as Map<String, dynamic>?;
+      if (command != null) {
+        if (command['update'] != null) {
+          Uint8List utf8type = utf8.encode('');
+          switch (command['type']) {
+            case 'Land':
+              utf8type = utf8.encode('0');
+            case 'Water':
+              utf8type = utf8.encode('1');
+            case 'Lava':
+              utf8type = utf8.encode('2');
+            case 'Air':
+              utf8type = utf8.encode('3');
+          }
+          _state = _state.copyWith(
+            nfcType: command['type'],
+            shouldUpdate: true,
+            nfcUtf8Type: utf8type,
+          );
+          _nfcUpdate.updateState(_state);
+          notifyListeners();
+        } else if (command['teleport'] != null) {
+          _state = _state.copyWith(shouldTeleportToSlimeHub: true);
+          notifyListeners();
+        } else if (command['reset'] != null) {
+          _state = _state.copyWith(shouldResetWorldValues: true);
+          notifyListeners();
+        } else if (command['menu'] != null) {
+          _state = _state.copyWith(shouldReturnToMenu: true);
+          notifyListeners();
+        } else if (command['updateItems'] != null) {
+          _state = _state.copyWith(items: [...command['items']]);
+          _nfcUpdate.updateState(_state);
+          notifyListeners();
+        } else if (command['cheat'] != null) {
+          _state = _state.copyWith(gameCheat: command['gameCheat']);
+          notifyListeners();
         }
-        _state = _state.copyWith(
-          nfcType: command['type'],
-          shouldUpdate: true,
-          nfcUtf8Type: utf8type,
-        );
-        _nfcUpdate.updateState(_state);
-        notifyListeners();
-      } else if (command['teleport'] != null) {
-        _state = _state.copyWith(shouldTeleportToSlimeHub: true);
-        notifyListeners();
-      } else if (command['reset'] != null) {
-        _state = _state.copyWith(shouldResetWorldValues: true);
-        notifyListeners();
-      } else if (command['menu'] != null) {
-        _state = _state.copyWith(shouldReturnToMenu: true);
-        notifyListeners();
-      } else if (command['updateItems'] != null) {
-        _state = _state.copyWith(items: [...command['items']]);
-        _nfcUpdate.updateState(_state);
-        notifyListeners();
-      } else if (command['cheat'] != null) {
-        _state = _state.copyWith(gameCheat: command['gameCheat']);
-        notifyListeners();
       }
     }
   }

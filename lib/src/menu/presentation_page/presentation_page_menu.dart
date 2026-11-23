@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/nfc_page.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/reader_mode_page.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/tiled_page.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/presentation_page_button.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/nfc_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/reader_mode_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/tiled_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/constant_widgets/presentation_page_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class PresentationPageMenu extends StatelessWidget {

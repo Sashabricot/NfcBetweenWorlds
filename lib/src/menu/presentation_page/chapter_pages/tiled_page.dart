@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/image_slider.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/styled_text.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/constant_widgets/image_slider.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/constant_widgets/styled_text.dart';
 
 class TiledPage extends StatelessWidget {
   const TiledPage({super.key});

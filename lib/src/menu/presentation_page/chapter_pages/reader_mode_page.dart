@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/styled_text.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class ReaderModePage extends StatelessWidget {
@@ -11,6 +10,7 @@ class ReaderModePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
+        fit: .expand,
         children: [
           Image(
             image: AssetImage(
@@ -19,7 +19,12 @@ class ReaderModePage extends StatelessWidget {
             filterQuality: .none,
             fit: .cover,
           ),
-          Center(child: StyledText('Reader mode active')),
+          Center(
+            child: Text(
+              'Reader mode active',
+              style: TextStyle(color: Colors.white, fontFamily: 'Pixel'),
+            ),
+          ),
         ],
       ),
     );
