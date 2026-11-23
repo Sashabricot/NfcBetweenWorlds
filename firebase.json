@@ -1,0 +1,22 @@
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "nfc-between-worlds",
+                    "appId": "1:347031152132:android:11229eb8cc0d42eb6cf751",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "nfc-between-worlds",
+                    "configurations": {
+                        "android": "1:347031152132:android:11229eb8cc0d42eb6cf751",
+                        "ios": "1:347031152132:ios:b0bfbec4c0e250e26cf751"
+                    }
+                }
+            }
+        }
+    }
+}

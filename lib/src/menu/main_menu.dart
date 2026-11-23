@@ -149,6 +149,7 @@ class _MainMenuState extends State<MainMenu> {
     super.dispose();
   }
 
+ 
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -215,7 +216,9 @@ class _MainMenuState extends State<MainMenu> {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => PresentationPageMenu(),
+                          builder: (context) => PresentationPageMenu(
+                            nfcDataNotifier: widget.nfcDataNotifier,
+                          ),
                         ),
                       );
                     },

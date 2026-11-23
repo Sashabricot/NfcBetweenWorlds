@@ -2,34 +2,63 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_data_state.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_update.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/nfc_manager_android.dart';
 import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 class NfcDataNotifier extends ChangeNotifier {
-  String? gameCheat;
-  String _nfcType = '';
-  Uint8List _nfcUtf8Type = utf8.encode('2');
-  NfcData _latestNfcData = NfcData(
-    ndefMessage: NdefMessage(records: []),
-    uid: '',
+  final NfcUpdate _nfcUpdate = NfcUpdate();
+
+  NfcDataNotifier() {
+    _nfcUpdate.nfcDataStateStream.listen((state) {
+      _state = state;
+      notifyListeners();
+    });
+    FirebaseFirestore.instance
+        .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((dataSnapshot) {
+          _processCommandSnapshot(dataSnapshot);
+        });
+  }
+
+  NfcDataState _state = NfcDataState(
+    shouldResetWorldValues: false,
+    shouldReturnToMenu: false,
+    shouldUpdate: false,
+    items: [],
+    shouldTeleportToSlimeHub: false,
+    latestNfcData: NfcData(
+      ndefMessage: NdefMessage(records: []),
+      uid: '',
+    ),
+    nfcUtf8Type: utf8.encode('2'),
   );
-  List<String> items = [];
-  bool shouldResetWorldValues = false;
-  bool isProcessing = false;
-  bool shouldUpdate = false;
-  bool shouldTeleportToSlimeHub = false;
-  bool shouldReturnToMenu = false;
+
+  NfcDataState get state => _state;
+
   Exception? error;
   String nfcSaveMessage = '';
-
-  NfcData get latestNfcData => _latestNfcData;
-
-  String get nfcType => _nfcType;
+  void _processCommandSnapshot(
+    QuerySnapshot<Map<String, dynamic>> commandSnapshot,
+  ) {
+    if (commandSnapshot.docs.isNotEmpty) {
+      final command = commandSnapshot.docs.first;
+      if (command['update'] != null) {
+        _state = _state.copyWith(nfcType: command['type'], shouldUpdate: true);
+        _nfcUpdate.updateState(_state);
+        notifyListeners();
+      }
+    }
+  }
 
   Future<void> blockSystemNfc() async {
     NfcAvailability availability = await NfcManager.instance
@@ -55,8 +84,7 @@ class NfcDataNotifier extends ChangeNotifier {
     required int? playerTimer,
     required String characterName,
   }) async {
-    shouldUpdate = false;
-    isProcessing = true;
+    _state = _state.copyWith(isProcessing: true);
     notifyListeners();
     NfcManager.instance.stopSession();
     NfcManager.instance.startSession(
@@ -73,8 +101,8 @@ class NfcDataNotifier extends ChangeNotifier {
       ),
     );
     await stopNfcWriting.future;
-    isProcessing = false;
-    startNfcCardTypeScan();
+    _state = _state.copyWith(isProcessing: false);
+    startNfcCardTypeScan(updateDatabase: false);
   }
 
   Future<void> _writeNfcSaveData({
@@ -88,8 +116,12 @@ class NfcDataNotifier extends ChangeNotifier {
     required String characterName,
   }) async {
     try {
-      final String positionXString = '${position.x}'.substring(0, 7);
-      final String positionYString = '${position.y}'.substring(0, 7);
+      final String positionXString = '${position.x}'.length >= 7
+          ? '${position.x}'.substring(0, 7)
+          : '${position.x}';
+      final String positionYString = '${position.y}'.length >= 7
+          ? '${position.y}'.substring(0, 7)
+          : '${position.y}';
       final String positionString = '$positionXString,$positionYString';
 
       final NdefMessage saveData = NdefMessage(
@@ -104,7 +136,7 @@ class NfcDataNotifier extends ChangeNotifier {
             typeNameFormat: TypeNameFormat.external,
             type: utf8.encode('s:t'),
             identifier: Uint8List.fromList([]),
-            payload: _nfcUtf8Type,
+            payload: _state.nfcUtf8Type,
           ),
           NdefRecord(
             typeNameFormat: TypeNameFormat.external,
@@ -171,115 +203,19 @@ class NfcDataNotifier extends ChangeNotifier {
       if (ndef == null) throw ('Tag is not ndef');
       if (!ndef.isWritable) throw ('Tag is not writeable');
       await ndef.write(message: saveData);
-      nfcSaveMessage = 'SavedData :  \nslimeType : $nfcType, \nlevel : $level';
+      nfcSaveMessage =
+          'SavedData :  \nslimeType : ${_state.nfcType}, \nlevel : $level';
       stopNfcWriting.complete();
     } catch (e) {
       nfcSaveMessage = e.toString();
       stopNfcWriting.complete();
     }
-    isProcessing = false;
+    _state = _state.copyWith(isProcessing: false);
     notifyListeners();
   }
 
-  Future<void> startNfcCardTypeScan() async {
-    shouldUpdate = true;
-    NfcAvailability availability = await NfcManager.instance
-        .checkAvailability();
-    if (availability == NfcAvailability.disabled ||
-        availability == NfcAvailability.unsupported) {
-      throw Exception('NFC not available');
-    } else {
-      NfcManager.instance.stopSession();
-      NfcManager.instance.startSession(
-        pollingOptions: {NfcPollingOption.iso14443},
-        onDiscovered: (NfcTag nfc) async => _processNfcData(nfc: nfc),
-      );
-    }
-  }
-
-  Future<void> _processNfcData({required NfcTag nfc}) async {
-    try {
-      NfcData newNfc;
-      final Ndef? ndef = Ndef.from(nfc);
-      final NfcTagAndroid? nfcTag = NfcTagAndroid.from(nfc);
-
-      final String nfcUid;
-
-      if (ndef == null) throw ('Tag is not ndef');
-      if (nfcTag != null) {
-        nfcUid = _parseNfcUid(nfcTag.id);
-      } else {
-        nfcUid = '';
-      }
-
-      newNfc = NfcData(ndefMessage: ndef.cachedMessage, uid: nfcUid);
-
-      if (newNfc.shouldTeleportToSlimeHub != null &&
-          newNfc.shouldTeleportToSlimeHub!) {
-        shouldUpdate = false;
-        shouldTeleportToSlimeHub = true;
-        notifyListeners();
-        shouldUpdate = true;
-        shouldTeleportToSlimeHub = false;
-      } else if (newNfc.shouldResetWorldValues != null &&
-          newNfc.shouldResetWorldValues!) {
-        shouldUpdate = false;
-        shouldResetWorldValues = true;
-        notifyListeners();
-        shouldUpdate = true;
-        shouldResetWorldValues = false;
-      } else if (newNfc.shouldReturnToMenu != null &&
-          newNfc.shouldReturnToMenu!) {
-        shouldUpdate = false;
-        shouldReturnToMenu = true;
-        notifyListeners();
-        shouldUpdate = true;
-        shouldReturnToMenu = false;
-      } else if (newNfc.characterItems.isNotEmpty &&
-          newNfc.characterPosition == null) {
-        shouldUpdate = false;
-        items.addAll(newNfc.characterItems);
-        notifyListeners();
-        items = [];
-        shouldUpdate = true;
-      } else if (newNfc.gameCheat != null) {
-        shouldUpdate = false;
-        gameCheat = newNfc.gameCheat!;
-        notifyListeners();
-        gameCheat = null;
-        shouldUpdate = true;
-      } else if (_latestNfcData.uid != newNfc.uid) {
-        if (newNfc.slimeType != null && newNfc.characterPosition == null) {
-          switch (newNfc.slimeType) {
-            case [50]:
-              _nfcUtf8Type = newNfc.slimeType!;
-              _nfcType = 'Land';
-              notifyListeners();
-            case [49]:
-              _nfcUtf8Type = newNfc.slimeType!;
-              _nfcType = 'Water';
-              notifyListeners();
-            case [48]:
-              _nfcUtf8Type = newNfc.slimeType!;
-              _nfcType = 'Lava';
-              notifyListeners();
-            case [51]:
-              _nfcUtf8Type = newNfc.slimeType!;
-              _nfcType = 'Air';
-              notifyListeners();
-            default:
-          }
-        } else if (newNfc.characterItems.contains('EasterEgg')) {
-          _nfcUtf8Type = utf8.encode('3');
-          _nfcType = 'Air';
-          notifyListeners();
-        }
-      }
-
-      _latestNfcData = newNfc;
-    } catch (e) {
-      throw Exception(e);
-    }
+  Future<void> startNfcCardTypeScan({required bool updateDatabase}) async {
+    _nfcUpdate.startNfcCardTypeScan(updateDatabase: updateDatabase);
   }
 
   Future<Map<String, dynamic>?> loadNfcSave({
@@ -344,20 +280,28 @@ class NfcDataNotifier extends ChangeNotifier {
       if (newNfc.slimeType != null) {
         switch (newNfc.slimeType) {
           case [50]:
-            _nfcUtf8Type = newNfc.slimeType!;
-            _nfcType = 'Land';
+            _state = _state.copyWith(
+              nfcType: 'Land',
+              nfcUtf8Type: newNfc.slimeType,
+            );
           case [49]:
-            _nfcUtf8Type = newNfc.slimeType!;
-            _nfcType = 'Water';
+            _state = _state.copyWith(
+              nfcType: 'Water',
+              nfcUtf8Type: newNfc.slimeType,
+            );
           case [48]:
-            _nfcUtf8Type = newNfc.slimeType!;
-            _nfcType = 'Lava';
+            _state = _state.copyWith(
+              nfcType: 'Lava',
+              nfcUtf8Type: newNfc.slimeType,
+            );
           case [51]:
-            _nfcUtf8Type = newNfc.slimeType!;
-            _nfcType = 'Air';
+            _state = _state.copyWith(
+              nfcType: 'Air',
+              nfcUtf8Type: newNfc.slimeType,
+            );
           default:
         }
-        nfcSavedType = _nfcType;
+        nfcSavedType = _state.nfcType;
         if (newNfc.characterPosition == null && newNfc.slimeType != null) {
           throw Exception('Please use a new NFC card');
         }
@@ -454,11 +398,13 @@ class NfcDataNotifier extends ChangeNotifier {
   }
 
   void giveAirSlime() {
-    _nfcUtf8Type = utf8.encode('3');
-    _nfcType = 'Air';
-    _latestNfcData = NfcData(
-      ndefMessage: NdefMessage(records: []),
-      uid: '',
+    _state = _state.copyWith(
+      nfcType: 'Air',
+      latestNfcData: NfcData(
+        ndefMessage: NdefMessage(records: []),
+        uid: '',
+      ),
     );
+    _nfcUpdate.giveAirSlime();
   }
 }

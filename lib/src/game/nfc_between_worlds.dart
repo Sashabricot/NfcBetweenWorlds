@@ -170,7 +170,7 @@ class NfcBetweenWorlds extends FlameGame
     level ??= 'teleportation_map.tmx';
     await _loadLevel(level!);
 
-    nfcDataNotifier.startNfcCardTypeScan();
+    nfcDataNotifier.startNfcCardTypeScan(updateDatabase: false);
 
     return super.onLoad();
   }
@@ -758,7 +758,7 @@ class NfcBetweenWorlds extends FlameGame
 
     blockedZone = [];
     nfcDataNotifier.giveAirSlime();
-    slimeType = nfcDataNotifier.nfcType;
+    slimeType = nfcDataNotifier.state.nfcType;
     slimeImage = '';
     world.remove(player);
     _loadWalkingType();
@@ -779,7 +779,7 @@ class NfcBetweenWorlds extends FlameGame
   }
 
   void _updateWorldFromNFC() {
-    if (nfcDataNotifier.shouldUpdate) {
+    if (nfcDataNotifier.state.shouldUpdate) {
       for (PositionComponent zone in blockedZone) {
         world.remove(zone);
       }
@@ -788,7 +788,7 @@ class NfcBetweenWorlds extends FlameGame
       final position = player.position;
 
       blockedZone = [];
-      slimeType = nfcDataNotifier.nfcType;
+      slimeType = nfcDataNotifier.state.nfcType;
       slimeImage = '';
       world.remove(player);
       _loadWalkingType();
@@ -806,11 +806,11 @@ class NfcBetweenWorlds extends FlameGame
       _loadLayers(levelMap);
 
       camera.follow(player, snap: true);
-    } else if (nfcDataNotifier.shouldTeleportToSlimeHub) {
+    } else if (nfcDataNotifier.state.shouldTeleportToSlimeHub) {
       changeLevel('teleportation_map.tmx');
-    } else if (nfcDataNotifier.shouldResetWorldValues) {
+    } else if (nfcDataNotifier.state.shouldResetWorldValues) {
       changeLevel(level!);
-    } else if (nfcDataNotifier.shouldReturnToMenu) {
+    } else if (nfcDataNotifier.state.shouldReturnToMenu) {
       Navigator.pushReplacement(
         buildContext!,
         MaterialPageRoute(
@@ -820,8 +820,8 @@ class NfcBetweenWorlds extends FlameGame
           ),
         ),
       );
-    } else if (nfcDataNotifier.items.isNotEmpty) {
-      for (var item in nfcDataNotifier.items) {
+    } else if (nfcDataNotifier.state.items.isNotEmpty) {
+      for (var item in nfcDataNotifier.state.items) {
         if (!collectedItems.contains(item)) {
           collectedItems.add(item);
         }
@@ -830,8 +830,8 @@ class NfcBetweenWorlds extends FlameGame
         world.remove(door);
         world.add(door);
       }
-    } else if (nfcDataNotifier.gameCheat != null) {
-      if (nfcDataNotifier.gameCheat! == '0') {
+    } else if (nfcDataNotifier.state.gameCheat != null) {
+      if (nfcDataNotifier.state.gameCheat! == '0') {
         if (finalDoor != null) {
           finalDoor!.toggleDoor();
         }
@@ -902,7 +902,7 @@ class NfcBetweenWorlds extends FlameGame
 
   @override
   void onGameResize(Vector2 size) {
-    nfcDataNotifier.startNfcCardTypeScan();
+    nfcDataNotifier.startNfcCardTypeScan(updateDatabase: false);
 
     if (_joystick != null && _joystick!.isLoaded) {
       joystickPosition = .only(
@@ -931,7 +931,7 @@ class NfcBetweenWorlds extends FlameGame
         state == AppLifecycleState.hidden) {
       pauseEngine();
     } else if (state == AppLifecycleState.resumed) {
-      nfcDataNotifier.startNfcCardTypeScan();
+      nfcDataNotifier.startNfcCardTypeScan(updateDatabase: false);
       resumeEngine();
     }
 

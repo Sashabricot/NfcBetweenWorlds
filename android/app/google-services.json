@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "347031152132",
+    "project_id": "nfc-between-worlds",
+    "storage_bucket": "nfc-between-worlds.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:347031152132:android:11229eb8cc0d42eb6cf751",
+        "android_client_info": {
+          "package_name": "com.example.test_game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwv0r-3w5coTEqw8dZaP-W1bWzLw4k6eE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

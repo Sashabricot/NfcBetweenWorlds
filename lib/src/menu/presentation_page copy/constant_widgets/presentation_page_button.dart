@@ -5,8 +5,9 @@ class PresentationPageButton extends StatelessWidget {
     super.key,
     required this.widget,
     required this.text,
+    required this.replace,
   });
-
+  final bool replace;
   final Widget widget;
   final String text;
 
@@ -14,9 +15,14 @@ class PresentationPageButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: ((context) => widget)));
+        replace
+            ? Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: ((context) => widget)),
+                (Route<dynamic> route) => false,
+              )
+            : Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: ((context) => widget)));
       },
       child: Container(
         alignment: .centerLeft,

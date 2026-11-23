@@ -39,13 +39,13 @@ class SaveButton extends StatelessWidget {
                         content: SizedBox(
                           height: 64,
                           child: Center(
-                            child: nfcDataNotifier.isProcessing
+                            child: nfcDataNotifier.state.isProcessing
                                 ? CircularProgressIndicator()
                                 : Text(nfcDataNotifier.nfcSaveMessage),
                           ),
                         ),
                         actions: <Widget>[
-                          nfcDataNotifier.isProcessing
+                          nfcDataNotifier.state.isProcessing
                               ? OutlinedButton(
                                   style: StyledButton().overlayButtonStyle,
                                   onPressed: () async {

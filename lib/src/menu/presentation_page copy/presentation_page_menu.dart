@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/nfc_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/reader_mode_page.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/chapter_pages/tiled_page.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/presentation_page_button.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class PresentationPageMenu extends StatelessWidget {
-  const PresentationPageMenu({super.key});
+  const PresentationPageMenu({super.key, required this.nfcDataNotifier});
+
+  final NfcDataNotifier nfcDataNotifier;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +32,19 @@ class PresentationPageMenu extends StatelessWidget {
               PresentationPageButton(
                 widget: NfcPage(),
                 text: 'Chapitre 1 - NFC',
+                replace: false,
               ),
               SizedBox(height: 8),
               PresentationPageButton(
                 widget: TiledPage(),
                 text: 'Chapitre 2 - Tiled et images',
+                replace: false,
+              ),
+              Expanded(child: SizedBox()),
+              PresentationPageButton(
+                widget: ReaderModePage(nfcDataNotifier: nfcDataNotifier),
+                text: 'Reader mode',
+                replace: true,
               ),
             ],
           ),
