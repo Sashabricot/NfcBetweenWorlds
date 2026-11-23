@@ -23,6 +23,14 @@ class NfcDataNotifier extends ChangeNotifier {
     });
     FirebaseFirestore.instance
         .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+        .get()
+        .then((snapshot) {
+          for (DocumentSnapshot ds in snapshot.docs) {
+            ds.reference.delete();
+          }
+        });
+    FirebaseFirestore.instance
+        .collection('nfc/953WxSNs91xEMWe6u9US/commands')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((dataSnapshot) {
@@ -53,8 +61,39 @@ class NfcDataNotifier extends ChangeNotifier {
     if (commandSnapshot.docs.isNotEmpty) {
       final command = commandSnapshot.docs.first;
       if (command['update'] != null) {
-        _state = _state.copyWith(nfcType: command['type'], shouldUpdate: true);
+        Uint8List utf8type = utf8.encode('');
+        switch (command['type']) {
+          case 'Land':
+            utf8type = utf8.encode('0');
+          case 'Water':
+            utf8type = utf8.encode('1');
+          case 'Lava':
+            utf8type = utf8.encode('2');
+          case 'Air':
+            utf8type = utf8.encode('3');
+        }
+        _state = _state.copyWith(
+          nfcType: command['type'],
+          shouldUpdate: true,
+          nfcUtf8Type: utf8type,
+        );
         _nfcUpdate.updateState(_state);
+        notifyListeners();
+      } else if (command['teleport'] != null) {
+        _state = _state.copyWith(shouldTeleportToSlimeHub: true);
+        notifyListeners();
+      } else if (command['reset'] != null) {
+        _state = _state.copyWith(shouldResetWorldValues: true);
+        notifyListeners();
+      } else if (command['menu'] != null) {
+        _state = _state.copyWith(shouldReturnToMenu: true);
+        notifyListeners();
+      } else if (command['updateItems'] != null) {
+        _state = _state.copyWith(items: [...command['items']]);
+        _nfcUpdate.updateState(_state);
+        notifyListeners();
+      } else if (command['cheat'] != null) {
+        _state = _state.copyWith(gameCheat: command['gameCheat']);
         notifyListeners();
       }
     }

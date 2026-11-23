@@ -71,29 +71,62 @@ class NfcUpdate {
           shouldTeleportToSlimeHub: true,
           latestNfcData: newNfc,
         );
+        if (updateDatabase) {
+          FirebaseFirestore.instance
+              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .add({'createdAt': DateTime.now(), 'teleport': true});
+        }
       } else if (newNfc.shouldResetWorldValues != null &&
           newNfc.shouldResetWorldValues!) {
         _state = _state.copyWith(
           shouldResetWorldValues: true,
           latestNfcData: newNfc,
         );
+        if (updateDatabase) {
+          FirebaseFirestore.instance
+              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .add({'createdAt': DateTime.now(), 'reset': true});
+        }
       } else if (newNfc.shouldReturnToMenu != null &&
           newNfc.shouldReturnToMenu!) {
         _state = _state.copyWith(
           shouldReturnToMenu: true,
           latestNfcData: newNfc,
         );
+        if (updateDatabase) {
+          FirebaseFirestore.instance
+              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .add({'createdAt': DateTime.now(), 'menu': true});
+        }
       } else if (newNfc.characterItems.isNotEmpty &&
           newNfc.characterPosition == null) {
         _state = _state.copyWith(
           items: [...newNfc.characterItems],
           latestNfcData: newNfc,
         );
+        if (updateDatabase) {
+          FirebaseFirestore.instance
+              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .add({
+                'createdAt': DateTime.now(),
+                'updateItems': true,
+                'items': [...newNfc.characterItems],
+              });
+        }
       } else if (newNfc.gameCheat != null) {
         _state = _state.copyWith(
           gameCheat: newNfc.gameCheat,
           latestNfcData: newNfc,
         );
+        if (updateDatabase) {
+          FirebaseFirestore.instance
+              .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+              .add({
+                'createdAt': DateTime.now(),
+                'cheat': true,
+                'gameCheat': newNfc.gameCheat,
+              });
+        }
       } else if (_state.latestNfcData.uid != newNfc.uid) {
         if (newNfc.slimeType != null && newNfc.characterPosition == null) {
           switch (newNfc.slimeType) {
@@ -148,6 +181,15 @@ class NfcUpdate {
             shouldUpdate: true,
             latestNfcData: newNfc,
           );
+          if (updateDatabase) {
+            FirebaseFirestore.instance
+                .collection('nfc/953WxSNs91xEMWe6u9US/commands')
+                .add({
+                  'createdAt': DateTime.now(),
+                  'update': true,
+                  'type': _state.nfcType,
+                });
+          }
         }
       }
 

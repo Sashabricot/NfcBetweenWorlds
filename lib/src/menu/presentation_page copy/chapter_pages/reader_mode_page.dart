@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page%20copy/constant_widgets/styled_text.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
 
 class ReaderModePage extends StatelessWidget {
@@ -8,13 +9,19 @@ class ReaderModePage extends StatelessWidget {
   Widget build(BuildContext context) {
     nfcDataNotifier.startNfcCardTypeScan(updateDatabase: true);
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text('Chapitre 1 - NFC', style: TextStyle(fontWeight: .bold)),
-        backgroundColor: Colors.white,
-      ),
       backgroundColor: Colors.white,
-      body: Center(child: Text('Reader mode active')),
+      body: Stack(
+        children: [
+          Image(
+            image: AssetImage(
+              'assets/images/presentation/teleporter_map_tiles.png',
+            ),
+            filterQuality: .none,
+            fit: .cover,
+          ),
+          Center(child: StyledText('Reader mode active')),
+        ],
+      ),
     );
   }
 }
