@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_state.dart';
 import 'package:nfc_manager/ndef_record.dart';
