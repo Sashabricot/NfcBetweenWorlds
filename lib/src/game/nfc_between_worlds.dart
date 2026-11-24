@@ -780,7 +780,6 @@ class NfcBetweenWorlds extends FlameGame
 
   void _updateWorldFromNFC() {
     if (nfcDataNotifier.state.shouldUpdate) {
-
       for (PositionComponent zone in blockedZone) {
         world.remove(zone);
       }
@@ -808,11 +807,12 @@ class NfcBetweenWorlds extends FlameGame
 
       camera.follow(player, snap: true);
     } else if (nfcDataNotifier.state.shouldTeleportToSlimeHub) {
-
       changeLevel('teleportation_map.tmx');
     } else if (nfcDataNotifier.state.shouldResetWorldValues) {
       changeLevel(level!);
     } else if (nfcDataNotifier.state.shouldReturnToMenu) {
+      print(nfcDataNotifier.state.shouldReturnToMenu);
+      print('returning to menu');
       Navigator.pushReplacement(
         buildContext!,
         MaterialPageRoute(

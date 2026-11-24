@@ -8,6 +8,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/models/nfc_data.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_state.dart';
+import 'package:nfc_between_worlds/src/provider/nfc_save.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_update.dart';
 import 'package:nfc_manager/ndef_record.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -16,6 +17,7 @@ import 'package:nfc_manager_ndef/nfc_manager_ndef.dart';
 
 class NfcDataNotifier extends ChangeNotifier {
   final NfcUpdate _nfcUpdate = NfcUpdate();
+  final NfcSave _nfcSave = NfcSave();
   final _user = FirebaseAuth.instance.currentUser;
   NfcDataNotifier() {
     _nfcUpdate.nfcDataStateStream.listen((state) {
@@ -131,132 +133,22 @@ class NfcDataNotifier extends ChangeNotifier {
   }) async {
     _state = _state.copyWith(isProcessing: true);
     notifyListeners();
-    NfcManager.instance.stopSession();
-    NfcManager.instance.startSession(
-      pollingOptions: {NfcPollingOption.iso14443},
-      onDiscovered: (NfcTag nfc) async => _writeNfcSaveData(
-        characterName: characterName,
-        nfc: nfc,
-        position: position,
-        stopNfcWriting: stopNfcWriting,
-        level: level,
-        collectedItems: collectedItems,
-        boxesPosition: boxesPosition,
-        playerTimer: playerTimer,
-      ),
+
+    nfcSaveMessage = await _nfcSave.savePlayerDataOnNfc(
+      position: position,
+      stopNfcWriting: stopNfcWriting,
+      level: level,
+      collectedItems: collectedItems,
+      boxesPosition: boxesPosition,
+      playerTimer: playerTimer,
+      characterName: characterName,
+      nfcUtf8Type: _state.nfcUtf8Type,
     );
-    await stopNfcWriting.future;
-    _state = _state.copyWith(isProcessing: false);
-    startNfcCardTypeScan(updateDatabase: false);
-  }
 
-  Future<void> _writeNfcSaveData({
-    required NfcTag nfc,
-    required Vector2 position,
-    required Completer stopNfcWriting,
-    required String level,
-    required List<String> collectedItems,
-    required List<Vector2> boxesPosition,
-    required int? playerTimer,
-    required String characterName,
-  }) async {
-    try {
-      final String positionXString = '${position.x}'.length >= 7
-          ? '${position.x}'.substring(0, 7)
-          : '${position.x}';
-      final String positionYString = '${position.y}'.length >= 7
-          ? '${position.y}'.substring(0, 7)
-          : '${position.y}';
-      final String positionString = '$positionXString,$positionYString';
-
-      final NdefMessage saveData = NdefMessage(
-        records: [
-          NdefRecord(
-            typeNameFormat: TypeNameFormat.wellKnown,
-            type: Uint8List.fromList([0x55]),
-            identifier: Uint8List.fromList([]),
-            payload: utf8.encode(positionString),
-          ),
-          NdefRecord(
-            typeNameFormat: TypeNameFormat.external,
-            type: utf8.encode('s:t'),
-            identifier: Uint8List.fromList([]),
-            payload: _state.nfcUtf8Type,
-          ),
-          NdefRecord(
-            typeNameFormat: TypeNameFormat.external,
-            type: utf8.encode('g:l'),
-            identifier: Uint8List.fromList([]),
-            payload: utf8.encode(level),
-          ),
-        ],
-      );
-      for (String item in collectedItems) {
-        Uint8List? itemUtf8;
-        switch (item) {
-          case 'BeginnerKey':
-            itemUtf8 = utf8.encode('0');
-          case 'IntermediateKey':
-            itemUtf8 = utf8.encode('1');
-          case 'AdvancedKey':
-            itemUtf8 = utf8.encode('2');
-          case 'EasterEgg':
-            itemUtf8 = utf8.encode('3');
-        }
-        if (itemUtf8 != null) {
-          saveData.records.add(
-            NdefRecord(
-              typeNameFormat: .external,
-              type: utf8.encode('g:i'),
-              identifier: Uint8List.fromList([]),
-              payload: itemUtf8,
-            ),
-          );
-        }
-      }
-
-      for (Vector2 position in boxesPosition) {
-        saveData.records.add(
-          NdefRecord(
-            typeNameFormat: .wellKnown,
-            type: utf8.encode('T'),
-            identifier: Uint8List.fromList([]),
-            payload: utf8.encode('${position.x},${position.y}'),
-          ),
-        );
-      }
-
-      saveData.records.add(
-        NdefRecord(
-          typeNameFormat: .external,
-          type: utf8.encode('p:t'),
-          identifier: Uint8List.fromList([]),
-          payload: utf8.encode(playerTimer.toString()),
-        ),
-      );
-
-      saveData.records.add(
-        NdefRecord(
-          typeNameFormat: .external,
-          type: utf8.encode('c:n'),
-          identifier: utf8.encode(''),
-          payload: utf8.encode(characterName),
-        ),
-      );
-
-      final ndef = Ndef.from(nfc);
-      if (ndef == null) throw ('Tag is not ndef');
-      if (!ndef.isWritable) throw ('Tag is not writeable');
-      await ndef.write(message: saveData);
-      nfcSaveMessage =
-          'SavedData :  \nslimeType : ${_state.nfcType}, \nlevel : $level';
-      stopNfcWriting.complete();
-    } catch (e) {
-      nfcSaveMessage = e.toString();
-      stopNfcWriting.complete();
-    }
     _state = _state.copyWith(isProcessing: false);
     notifyListeners();
+    startNfcCardTypeScan(updateDatabase: false);
+    // nfcSaveMessage = '';
   }
 
   Future<void> startNfcCardTypeScan({required bool updateDatabase}) async {
@@ -285,7 +177,7 @@ class NfcDataNotifier extends ChangeNotifier {
 
     await stopNfcSaveReading.future;
     // blockSystemNfc();
-
+    _nfcUpdate.updateState(_state);
     return characterSaveData;
   }
 
@@ -410,6 +302,7 @@ class NfcDataNotifier extends ChangeNotifier {
       stopNfcSaveReading.complete();
       error = e;
       notifyListeners();
+
       return characterSaveData;
     }
   }
