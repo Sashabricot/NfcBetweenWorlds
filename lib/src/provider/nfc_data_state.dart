@@ -12,6 +12,7 @@ class NfcDataState {
   final String nfcType;
   final NfcData latestNfcData;
   final Uint8List nfcUtf8Type;
+  final String? error;
 
   NfcDataState({
     required this.shouldResetWorldValues,
@@ -24,6 +25,7 @@ class NfcDataState {
     this.nfcType = '',
     this.isProcessing = false,
     required this.nfcUtf8Type,
+    this.error,
   });
 
   NfcDataState copyWith({
@@ -37,6 +39,7 @@ class NfcDataState {
     final String? nfcType,
     final NfcData? latestNfcData,
     final Uint8List? nfcUtf8Type,
+    final String? error,
   }) {
     return NfcDataState(
       latestNfcData: latestNfcData ?? this.latestNfcData,
@@ -49,6 +52,7 @@ class NfcDataState {
       nfcType: nfcType ?? this.nfcType,
       nfcUtf8Type: nfcUtf8Type ?? this.nfcUtf8Type,
       isProcessing: isProcessing ?? this.isProcessing,
+      error: error,
     );
   }
 }

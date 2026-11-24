@@ -811,8 +811,6 @@ class NfcBetweenWorlds extends FlameGame
     } else if (nfcDataNotifier.state.shouldResetWorldValues) {
       changeLevel(level!);
     } else if (nfcDataNotifier.state.shouldReturnToMenu) {
-      print(nfcDataNotifier.state.shouldReturnToMenu);
-      print('returning to menu');
       Navigator.pushReplacement(
         buildContext!,
         MaterialPageRoute(

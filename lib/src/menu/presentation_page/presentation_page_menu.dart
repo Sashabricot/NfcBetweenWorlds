@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/nfc_page.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/reader_mode_page.dart';
+import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/save_scanner_mode.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page/chapter_pages/tiled_page.dart';
 import 'package:nfc_between_worlds/src/menu/presentation_page/constant_widgets/presentation_page_button.dart';
 import 'package:nfc_between_worlds/src/provider/nfc_data_notifier.dart';
@@ -41,6 +42,11 @@ class PresentationPageMenu extends StatelessWidget {
                 replace: false,
               ),
               Expanded(child: SizedBox()),
+              PresentationPageButton(
+                widget: SaveScannerMode(),
+                text: 'Save Scanner mode',
+                replace: true,
+              ),
               PresentationPageButton(
                 widget: ReaderModePage(nfcDataNotifier: nfcDataNotifier),
                 text: 'Reader mode',

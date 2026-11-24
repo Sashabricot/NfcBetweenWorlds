@@ -23,121 +23,119 @@ class _MainMenuState extends State<MainMenu> {
   late final AppLifecycleListener _listener;
   Completer stopNfcSaveReading = Completer();
   void initGame(Map<String, dynamic> characterSaveData) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PopScope(
-          canPop: false,
-          child: GameWidget<NfcBetweenWorlds>.controlled(
-            gameFactory: () {
-              return NfcBetweenWorlds(
-                characterName: characterSaveData['characterName'] ??= 'test',
-                nfcDataNotifier: widget.nfcDataNotifier,
-                characterPosition: characterSaveData['characterPosition'],
-                slimeType: characterSaveData['nfcType'],
-                level: characterSaveData['level'],
-                characterItems: characterSaveData['items'],
-                savedBoxesPosition: characterSaveData['boxesPosition'],
-                playerTimer: characterSaveData['playerTimer'],
-              );
-            },
-            overlayBuilderMap: {
-              'SaveButton': (_, game) => SaveButton(
-                game: game,
-                nfcDataNotifier: widget.nfcDataNotifier,
-              ),
-              'PauseButton': (_, game) => PauseButton(
-                game: game,
-                nfcDataNotifier: widget.nfcDataNotifier,
-              ),
-            },
-            loadingBuilder: (context) =>
-                Center(child: CircularProgressIndicator()),
-
-            // initialActiveOverlays: const ['SaveButton', 'PauseButton'],
-            initialActiveOverlays: const ['SaveButton'],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> loadGame(Map<String, dynamic>? characterSaveData) async {
-    if (widget.nfcDataNotifier.error == null && characterSaveData != null) {
-      if (characterSaveData['characterName'] == null) {
-        final playerForm = PlayerForm(
-          initGame: initGame,
-          characterSaveData: characterSaveData,
-        );
-        showDialog(
-          barrierDismissible: false,
-          context: context,
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
           builder: (context) => PopScope(
             canPop: false,
-            child: AlertDialog(
-              title: Text('Choisissez un nom de joueur'),
-              content: SizedBox(height: 64, child: playerForm),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(context, 'Annuler');
-                    stopNfcSaveReading = Completer();
-                    widget.nfcDataNotifier
-                        .loadNfcSave(
-                          startNewGame: false,
-                          stopNfcSaveReading: stopNfcSaveReading,
-                          nfcDataNotifier: widget.nfcDataNotifier,
-                        )
-                        .then(
-                          (characterSaveData) => loadGame(characterSaveData),
-                        );
-                  },
-                  child: Text('Annuler'),
+            child: GameWidget<NfcBetweenWorlds>.controlled(
+              gameFactory: () {
+                return NfcBetweenWorlds(
+                  characterName: characterSaveData['characterName'] ??= 'test',
+                  nfcDataNotifier: widget.nfcDataNotifier,
+                  characterPosition: characterSaveData['characterPosition'],
+                  slimeType: characterSaveData['nfcType'],
+                  level: characterSaveData['level'],
+                  characterItems: characterSaveData['items'],
+                  savedBoxesPosition: characterSaveData['boxesPosition'],
+                  playerTimer: characterSaveData['playerTimer'],
+                );
+              },
+              overlayBuilderMap: {
+                'SaveButton': (_, game) => SaveButton(
+                  game: game,
+                  nfcDataNotifier: widget.nfcDataNotifier,
                 ),
-                TextButton(
-                  onPressed: () async {
-                    playerForm.saveForm();
-                  },
-                  child: Text('Confirmer'),
+                'PauseButton': (_, game) => PauseButton(
+                  game: game,
+                  nfcDataNotifier: widget.nfcDataNotifier,
                 ),
-              ],
+              },
+              loadingBuilder: (context) =>
+                  Center(child: CircularProgressIndicator()),
+
+              // initialActiveOverlays: const ['SaveButton', 'PauseButton'],
+              initialActiveOverlays: const ['SaveButton'],
             ),
           ),
-        );
+        ),
+      );
+    }
+  }
+
+  void loadGame(Map<String, dynamic>? characterSaveData) {
+    if (mounted) {
+      if (widget.nfcDataNotifier.state.error == null &&
+          characterSaveData != null) {
+        if (characterSaveData['characterName'] == null) {
+          final playerForm = PlayerForm(
+            initGame: initGame,
+            characterSaveData: characterSaveData,
+          );
+          showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) => PopScope(
+              canPop: false,
+              child: AlertDialog(
+                title: Text('Choisissez un nom de joueur'),
+                content: SizedBox(height: 64, child: playerForm),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.pop(context, 'Annuler');
+                      stopNfcSaveReading = Completer();
+                      widget.nfcDataNotifier.loadNfcSave(
+                        startNewGame: false,
+                        stopNfcSaveReading: stopNfcSaveReading,
+                        nfcDataNotifier: widget.nfcDataNotifier,
+                      );
+                    },
+                    child: Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      playerForm.saveForm();
+                    },
+                    child: Text('Confirmer'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          initGame(characterSaveData);
+        }
       } else {
-        initGame(characterSaveData);
+        stopNfcSaveReading = Completer();
+        widget.nfcDataNotifier.loadNfcSave(
+          startNewGame: false,
+          stopNfcSaveReading: stopNfcSaveReading,
+          nfcDataNotifier: widget.nfcDataNotifier,
+        );
       }
-    } else {
-      stopNfcSaveReading = Completer();
-      widget.nfcDataNotifier
-          .loadNfcSave(
-            startNewGame: false,
-            stopNfcSaveReading: stopNfcSaveReading,
-            nfcDataNotifier: widget.nfcDataNotifier,
-          )
-          .then((characterSaveData) => loadGame(characterSaveData));
     }
   }
 
   @override
   void initState() {
-    widget.nfcDataNotifier
-        .loadNfcSave(
-          startNewGame: false,
-          stopNfcSaveReading: stopNfcSaveReading,
-          nfcDataNotifier: widget.nfcDataNotifier,
-        )
-        .then((characterSaveData) => loadGame(characterSaveData));
+    widget.nfcDataNotifier.addListener(() {
+      loadGame(widget.nfcDataNotifier.characterSaveData);
+    });
+    widget.nfcDataNotifier.loadNfcSave(
+      startNewGame: false,
+      stopNfcSaveReading: stopNfcSaveReading,
+      nfcDataNotifier: widget.nfcDataNotifier,
+    );
     _listener = AppLifecycleListener(
       onResume: () {
         stopNfcSaveReading = Completer();
-        widget.nfcDataNotifier
-            .loadNfcSave(
-              startNewGame: false,
-              stopNfcSaveReading: stopNfcSaveReading,
-              nfcDataNotifier: widget.nfcDataNotifier,
-            )
-            .then((characterSaveData) => loadGame(characterSaveData));
+        widget.nfcDataNotifier.loadNfcSave(
+          startNewGame: false,
+          stopNfcSaveReading: stopNfcSaveReading,
+          nfcDataNotifier: widget.nfcDataNotifier,
+        );
       },
     );
     super.initState();
@@ -146,6 +144,9 @@ class _MainMenuState extends State<MainMenu> {
   @override
   void dispose() {
     _listener.dispose();
+    widget.nfcDataNotifier.removeListener(() {
+      loadGame(widget.nfcDataNotifier.characterSaveData);
+    });
     super.dispose();
   }
 

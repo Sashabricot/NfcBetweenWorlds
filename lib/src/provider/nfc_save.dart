@@ -107,13 +107,22 @@ class NfcSave {
         }
       }
 
-      for (Vector2 position in boxesPosition) {
+      for (Vector2 boxPosition in boxesPosition) {
+        final String boxPositionXString = '${boxPosition.x}'.length >= 7
+            ? '${boxPosition.x}'.substring(0, 7)
+            : '${boxPosition.x}';
+        final String boxPositionYString = '${boxPosition.y}'.length >= 7
+            ? '${boxPosition.y}'.substring(0, 7)
+            : '${boxPosition.y}';
+        final String boxPositionString =
+            '$boxPositionXString,$boxPositionYString';
+
         saveData.records.add(
           NdefRecord(
             typeNameFormat: .wellKnown,
             type: utf8.encode('T'),
             identifier: Uint8List.fromList([]),
-            payload: utf8.encode('${position.x},${position.y}'),
+            payload: utf8.encode(boxPositionString),
           ),
         );
       }
