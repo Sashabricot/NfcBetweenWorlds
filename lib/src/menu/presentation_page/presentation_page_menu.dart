@@ -47,6 +47,7 @@ class PresentationPageMenu extends StatelessWidget {
                 text: 'Save Scanner mode',
                 replace: true,
               ),
+              SizedBox(height: 8),
               PresentationPageButton(
                 widget: ReaderModePage(nfcDataNotifier: nfcDataNotifier),
                 text: 'Reader mode',

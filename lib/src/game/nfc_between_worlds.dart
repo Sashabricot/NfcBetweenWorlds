@@ -330,6 +330,19 @@ class NfcBetweenWorlds extends FlameGame
     _loadTeleporter();
 
     _loadLayers(levelMap);
+
+    List<Vector2> boxesPosition = [];
+    for (BoxItem box in _boxes) {
+      boxesPosition.add(box.position);
+    }
+    nfcDataNotifier.sendUpdate(
+      position: player.position,
+      boxesPosition: boxesPosition,
+      playerTimer: gameTimer,
+      collectedItems: collectedItems,
+      level: level,
+      characterName: characterName,
+    );
   }
 
   void _loadDecorations() {
@@ -811,6 +824,7 @@ class NfcBetweenWorlds extends FlameGame
     } else if (nfcDataNotifier.state.shouldResetWorldValues) {
       changeLevel(level!);
     } else if (nfcDataNotifier.state.shouldReturnToMenu) {
+      nfcDataNotifier.isRemoteSave = false;
       Navigator.pushReplacement(
         buildContext!,
         MaterialPageRoute(
@@ -898,6 +912,18 @@ class NfcBetweenWorlds extends FlameGame
       world.add(door);
     }
     collectedItems.add(worldKey);
+    List<Vector2> boxesPosition = [];
+    for (BoxItem box in _boxes) {
+      boxesPosition.add(box.position);
+    }
+    nfcDataNotifier.sendUpdate(
+      position: player.position,
+      boxesPosition: boxesPosition,
+      playerTimer: gameTimer,
+      collectedItems: collectedItems,
+      level: level,
+      characterName: characterName,
+    );
   }
 
   @override

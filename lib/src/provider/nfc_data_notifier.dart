@@ -19,6 +19,7 @@ class NfcDataNotifier extends ChangeNotifier {
   final NfcSave _nfcSave = NfcSave();
   final NfcLoadSave nfcLoadSave = NfcLoadSave();
   final _user = FirebaseAuth.instance.currentUser;
+  bool isRemoteSave = false;
   NfcDataNotifier() {
     _nfcUpdate.nfcDataStateStream.listen((state) {
       _state = state;
@@ -46,6 +47,7 @@ class NfcDataNotifier extends ChangeNotifier {
 
       FirebaseFirestore.instance
           .collection('nfc/${_user.uid}/save')
+          .orderBy('createdAt', descending: true)
           .snapshots()
           .listen((saveSnapshot) {
             _processSaveSnapshot(saveSnapshot);
@@ -65,7 +67,7 @@ class NfcDataNotifier extends ChangeNotifier {
     ),
     nfcUtf8Type: utf8.encode('2'),
   );
-
+  bool shouldLoadSave = false;
   NfcDataState get state => _state;
 
   String nfcSaveMessage = '';
@@ -83,7 +85,7 @@ class NfcDataNotifier extends ChangeNotifier {
         String? nfcType = command['nfcType'];
         String? level = command['level'];
         String? characterName = command['characterName'];
-        List<String>? characterItems = command['characterItems'];
+        List<String>? characterItems = [...command['items']];
 
         List<Vector2> boxesPosition = [];
         for (String position in command['boxesPosition']) {
@@ -91,11 +93,30 @@ class NfcDataNotifier extends ChangeNotifier {
           if (boxPosition != null) boxesPosition.add(boxPosition);
         }
         int? playerTimer = command['playerTimer'];
-        _state.copyWith(
-          nfcType: nfcType,
-          nfcUtf8Type: utf8.encode(command['utf8Type']),
-        );
+        Uint8List utf8Type;
+        if (command['utf8Type'] == '') {
+          utf8Type = utf8.encode('2');
+        } else {
+          utf8Type = utf8.encode(command['utf8Type']);
+        }
 
+        _state = _state.copyWith(
+          nfcType: nfcType,
+          nfcUtf8Type: utf8Type,
+          error: null,
+        );
+        if (characterName == '') {
+          characterName = null;
+        }
+        if (level == '') {
+          level = null;
+        }
+        if (nfcType == '') {
+          nfcType = null;
+        }
+        if (playerTimer == 0) {
+          playerTimer = null;
+        }
         characterSaveData = {
           'characterPosition': characterPosition,
           'nfcType': nfcType,
@@ -105,7 +126,12 @@ class NfcDataNotifier extends ChangeNotifier {
           'playerTimer': playerTimer,
           'characterName': characterName,
         };
+
+        shouldLoadSave = true;
+        isRemoteSave = true;
         notifyListeners();
+
+        shouldLoadSave = false;
       }
     }
   }
@@ -216,8 +242,9 @@ class NfcDataNotifier extends ChangeNotifier {
       nfcDataNotifier: nfcDataNotifier,
     );
     _nfcUpdate.updateState(_state);
-
+    shouldLoadSave = true;
     notifyListeners();
+    shouldLoadSave = false;
   }
 
   void giveAirSlime() {
@@ -244,6 +271,66 @@ class NfcDataNotifier extends ChangeNotifier {
       return Vector2(characterPosition.first, characterPosition.last);
     } else {
       return null;
+    }
+  }
+
+  void sendUpdate({
+    required Vector2 position,
+    Completer? stopNfcWriting,
+    String? level,
+    List<String>? collectedItems,
+    required List<Vector2> boxesPosition,
+    required int playerTimer,
+    required String characterName,
+  }) {
+    if (_user != null && isRemoteSave) {
+      final String positionXString = '${position.x}'.length >= 7
+          ? '${position.x}'.substring(0, 7)
+          : '${position.x}';
+      final String positionYString = '${position.y}'.length >= 7
+          ? '${position.y}'.substring(0, 7)
+          : '${position.y}';
+      final String positionString = '$positionXString,$positionYString';
+
+      if (collectedItems != null) {
+        for (String item in collectedItems) {
+          Uint8List? itemUtf8;
+          switch (item) {
+            case 'BeginnerKey':
+              itemUtf8 = utf8.encode('0');
+            case 'IntermediateKey':
+              itemUtf8 = utf8.encode('1');
+            case 'AdvancedKey':
+              itemUtf8 = utf8.encode('2');
+            case 'EasterEgg':
+              itemUtf8 = utf8.encode('3');
+          }
+          if (itemUtf8 != null) {}
+        }
+      }
+      final List<String> boxPositions = [];
+      for (Vector2 boxPosition in boxesPosition) {
+        final String boxPositionXString = '${boxPosition.x}'.length >= 7
+            ? '${boxPosition.x}'.substring(0, 7)
+            : '${boxPosition.x}';
+        final String boxPositionYString = '${boxPosition.y}'.length >= 7
+            ? '${boxPosition.y}'.substring(0, 7)
+            : '${boxPosition.y}';
+        final String boxPositionString =
+            '$boxPositionXString,$boxPositionYString';
+        boxPositions.add(boxPositionString);
+      }
+
+      FirebaseFirestore.instance.collection('nfc/${_user.uid}/update').add({
+        'createdAt': DateTime.now(),
+        'characterPosition': positionString,
+        'level': level,
+        'characterName': characterName,
+        'characterItems': collectedItems,
+        'boxesPosition': boxPositions,
+        'playerTimer': playerTimer,
+        'utf8Type': _state.nfcUtf8Type,
+      });
     }
   }
 }

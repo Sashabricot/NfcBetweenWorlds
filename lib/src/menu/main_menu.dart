@@ -32,7 +32,7 @@ class _MainMenuState extends State<MainMenu> {
             child: GameWidget<NfcBetweenWorlds>.controlled(
               gameFactory: () {
                 return NfcBetweenWorlds(
-                  characterName: characterSaveData['characterName'] ??= 'test',
+                  characterName: characterSaveData['characterName'],
                   nfcDataNotifier: widget.nfcDataNotifier,
                   characterPosition: characterSaveData['characterPosition'],
                   slimeType: characterSaveData['nfcType'],
@@ -65,7 +65,7 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   void loadGame(Map<String, dynamic>? characterSaveData) {
-    if (mounted) {
+    if (mounted && widget.nfcDataNotifier.shouldLoadSave) {
       if (widget.nfcDataNotifier.state.error == null &&
           characterSaveData != null) {
         if (characterSaveData['characterName'] == null) {

@@ -17,10 +17,12 @@ class NfcSave {
     required int? playerTimer,
     required String characterName,
     required Uint8List nfcUtf8Type,
+    bool noPlatformSoundsAndroid = false,
   }) async {
     String nfcSaveMessage = '';
     NfcManager.instance.stopSession();
     NfcManager.instance.startSession(
+      noPlatformSoundsAndroid: noPlatformSoundsAndroid,
       pollingOptions: {NfcPollingOption.iso14443},
       onDiscovered: (NfcTag nfc) async => {
         nfcSaveMessage = await _writeNfcSaveData(
